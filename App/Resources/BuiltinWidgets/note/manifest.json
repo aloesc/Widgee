@@ -1,0 +1,96 @@
+{
+  "id": "note",
+  "name": "Note",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "A note or quote from settings. Plain or big quote.",
+  "category": "other",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "plain",
+      "options": [
+        "plain",
+        "quote"
+      ]
+    },
+    {
+      "key": "text",
+      "type": "string",
+      "label": "Text",
+      "default": "Make something wonderful."
+    },
+    {
+      "key": "author",
+      "type": "string",
+      "label": "Author (optional)",
+      "default": ""
+    },
+    {
+      "key": "fontSize",
+      "type": "number",
+      "label": "Font size (0 = auto)",
+      "default": 0
+    },
+    {
+      "key": "accent",
+      "type": "boolean",
+      "label": "Accent color",
+      "default": false
+    }
+  ],
+  "variants": [
+    {
+      "key": "plain",
+      "name": "Plain",
+      "size": "2x1",
+      "settings": {
+        "style": "plain"
+      }
+    },
+    {
+      "key": "quote",
+      "name": "Big quote",
+      "size": "2x2",
+      "settings": {
+        "style": "quote",
+        "text": "The best way to predict the future is to invent it.",
+        "author": "Alan Kay",
+        "accent": true
+      }
+    },
+    {
+      "key": "quote-wide",
+      "name": "Quote wide",
+      "size": "4x2",
+      "settings": {
+        "style": "quote",
+        "text": "Simplicity is the ultimate sophistication.",
+        "author": "",
+        "accent": true
+      }
+    },
+    {
+      "key": "small",
+      "name": "Small note",
+      "size": "1x1",
+      "settings": {
+        "style": "plain",
+        "text": "Remember the milk"
+      }
+    }
+  ]
+}

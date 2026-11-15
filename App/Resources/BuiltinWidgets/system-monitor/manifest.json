@@ -1,0 +1,180 @@
+{
+  "id": "system-monitor",
+  "name": "System Monitor",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "CPU load, memory, disk, network and battery. Bars, rings, gauges, segments, per-core or sparklines.",
+  "category": "system",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [
+      "cpu",
+      "ram",
+      "disk",
+      "network",
+      "battery"
+    ],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "layout",
+      "type": "select",
+      "label": "Layout",
+      "default": "bars",
+      "options": [
+        "bars",
+        "rings",
+        "graphs",
+        "gauges",
+        "segmented",
+        "cores",
+        "sparklines"
+      ]
+    },
+    {
+      "key": "colorMode",
+      "type": "select",
+      "label": "Colors (fill level: low battery = red)",
+      "default": "Per metric",
+      "options": [
+        "Per metric",
+        "Single color",
+        "By fill level",
+        "Custom per metric"
+      ]
+    },
+    {
+      "key": "singleColor",
+      "type": "color",
+      "label": "Color",
+      "default": "#0A84FF",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Single color"
+      }
+    },
+    {
+      "key": "cpuColor",
+      "type": "color",
+      "label": "CPU color",
+      "default": "#0A84FF",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom per metric"
+      }
+    },
+    {
+      "key": "ramColor",
+      "type": "color",
+      "label": "RAM color",
+      "default": "#30D158",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom per metric"
+      }
+    },
+    {
+      "key": "diskColor",
+      "type": "color",
+      "label": "Disk color",
+      "default": "#FF9F0A",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom per metric"
+      }
+    },
+    {
+      "key": "netColor",
+      "type": "color",
+      "label": "Network color",
+      "default": "#FF9F0A",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom per metric"
+      }
+    },
+    {
+      "key": "batteryColor",
+      "type": "color",
+      "label": "Battery color",
+      "default": "#30D158",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom per metric"
+      }
+    }
+  ],
+  "variants": [
+    {
+      "key": "bars",
+      "name": "Bars",
+      "size": "2x1",
+      "settings": {
+        "layout": "bars"
+      }
+    },
+    {
+      "key": "rings",
+      "name": "Rings",
+      "size": "2x1",
+      "settings": {
+        "layout": "rings"
+      }
+    },
+    {
+      "key": "graphs",
+      "name": "Graphs",
+      "size": "2x1",
+      "settings": {
+        "layout": "graphs"
+      }
+    },
+    {
+      "key": "large",
+      "name": "Detailed",
+      "size": "2x2",
+      "settings": {
+        "layout": "bars"
+      }
+    },
+    {
+      "key": "gauges",
+      "name": "Gauges",
+      "size": "2x1",
+      "settings": {
+        "layout": "gauges"
+      }
+    },
+    {
+      "key": "segmented",
+      "name": "Segmented",
+      "size": "2x1",
+      "settings": {
+        "layout": "segmented"
+      }
+    },
+    {
+      "key": "cores",
+      "name": "CPU cores",
+      "size": "2x2",
+      "settings": {
+        "layout": "cores"
+      }
+    },
+    {
+      "key": "sparklines",
+      "name": "Sparklines",
+      "size": "2x1",
+      "settings": {
+        "layout": "sparklines"
+      }
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "id": "weather",
+  "name": "Weather",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Current weather and a 5-day forecast (Open-Meteo, no API key). Default, compact, hourly strip, forecast list or big temperature.",
+  "category": "weather",
+  "defaultBackground": {
+    "style": "tint",
+    "hex": "#2F7BE0",
+    "opacity": 0.9
+  },
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": [
+      "api.open-meteo.com"
+    ]
+  },
+  "settings": [
+    {
+      "key": "city",
+      "type": "city",
+      "label": "City",
+      "default": {
+        "name": "Moscow",
+        "latitude": 55.7558,
+        "longitude": 37.6176,
+        "country": "Russia"
+      }
+    },
+    {
+      "key": "units",
+      "type": "select",
+      "label": "Units",
+      "default": "celsius",
+      "options": [
+        "celsius",
+        "fahrenheit"
+      ]
+    },
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "default",
+      "options": [
+        "default",
+        "compact",
+        "hourly",
+        "forecast",
+        "big"
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "key": "default",
+      "name": "Default",
+      "size": "2x2",
+      "settings": {
+        "style": "default"
+      }
+    },
+    {
+      "key": "compact",
+      "name": "Compact",
+      "size": "1x1",
+      "settings": {
+        "style": "compact"
+      }
+    },
+    {
+      "key": "hourly",
+      "name": "Hourly strip",
+      "size": "4x2",
+      "settings": {
+        "style": "hourly"
+      }
+    },
+    {
+      "key": "forecast",
+      "name": "Forecast list",
+      "size": "2x2",
+      "settings": {
+        "style": "forecast"
+      }
+    },
+    {
+      "key": "big",
+      "name": "Big temperature",
+      "size": "1x1",
+      "settings": {
+        "style": "big"
+      }
+    }
+  ]
+}

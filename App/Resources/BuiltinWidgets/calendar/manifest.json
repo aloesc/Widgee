@@ -1,0 +1,80 @@
+{
+  "id": "calendar",
+  "name": "Calendar",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Month grid, current week or a big date. Today is highlighted.",
+  "category": "today",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "month",
+      "options": [
+        "month",
+        "compact",
+        "date"
+      ]
+    },
+    {
+      "key": "weekStart",
+      "type": "select",
+      "label": "Week starts on",
+      "default": "Monday",
+      "options": [
+        "Monday",
+        "Sunday"
+      ],
+      "showIf": {
+        "key": "style",
+        "equals": "month"
+      }
+    }
+  ],
+  "variants": [
+    {
+      "key": "month",
+      "name": "Month",
+      "size": "2x2",
+      "settings": {
+        "style": "month"
+      }
+    },
+    {
+      "key": "month-wide",
+      "name": "Month wide",
+      "size": "4x2",
+      "settings": {
+        "style": "month"
+      }
+    },
+    {
+      "key": "week",
+      "name": "Week",
+      "size": "2x1",
+      "settings": {
+        "style": "compact"
+      }
+    },
+    {
+      "key": "date",
+      "name": "Big date",
+      "size": "1x1",
+      "settings": {
+        "style": "date"
+      }
+    }
+  ]
+}

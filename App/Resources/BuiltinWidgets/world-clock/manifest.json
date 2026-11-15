@@ -1,0 +1,159 @@
+{
+  "id": "world-clock",
+  "name": "World Clock",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Time in 2 to 4 cities. List or columns.",
+  "category": "clock",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "layout",
+      "type": "select",
+      "label": "Layout",
+      "default": "list",
+      "options": [
+        "list",
+        "columns"
+      ]
+    },
+    {
+      "key": "tz1",
+      "type": "string",
+      "label": "City 1 time zone (IANA)",
+      "default": "America/New_York"
+    },
+    {
+      "key": "label1",
+      "type": "string",
+      "label": "City 1 label",
+      "default": "New York"
+    },
+    {
+      "key": "tz2",
+      "type": "string",
+      "label": "City 2 time zone (IANA)",
+      "default": "Europe/London"
+    },
+    {
+      "key": "label2",
+      "type": "string",
+      "label": "City 2 label",
+      "default": "London"
+    },
+    {
+      "key": "showThird",
+      "type": "boolean",
+      "label": "Show city 3",
+      "default": true
+    },
+    {
+      "key": "tz3",
+      "type": "string",
+      "label": "City 3 time zone (IANA)",
+      "default": "Asia/Tokyo",
+      "showIf": {
+        "key": "showThird",
+        "equals": true
+      }
+    },
+    {
+      "key": "label3",
+      "type": "string",
+      "label": "City 3 label",
+      "default": "Tokyo",
+      "showIf": {
+        "key": "showThird",
+        "equals": true
+      }
+    },
+    {
+      "key": "showFourth",
+      "type": "boolean",
+      "label": "Show city 4",
+      "default": false
+    },
+    {
+      "key": "tz4",
+      "type": "string",
+      "label": "City 4 time zone (IANA)",
+      "default": "Australia/Sydney",
+      "showIf": {
+        "key": "showFourth",
+        "equals": true
+      }
+    },
+    {
+      "key": "label4",
+      "type": "string",
+      "label": "City 4 label",
+      "default": "Sydney",
+      "showIf": {
+        "key": "showFourth",
+        "equals": true
+      }
+    },
+    {
+      "key": "hour12",
+      "type": "boolean",
+      "label": "12-hour format",
+      "default": false
+    },
+    {
+      "key": "showSeconds",
+      "type": "boolean",
+      "label": "Show seconds",
+      "default": false
+    }
+  ],
+  "variants": [
+    {
+      "key": "list",
+      "name": "List",
+      "size": "2x1",
+      "settings": {
+        "layout": "list",
+        "showThird": false
+      }
+    },
+    {
+      "key": "list-large",
+      "name": "List large",
+      "size": "2x2",
+      "settings": {
+        "layout": "list",
+        "showThird": true,
+        "showFourth": true
+      }
+    },
+    {
+      "key": "columns",
+      "name": "Columns",
+      "size": "2x1",
+      "settings": {
+        "layout": "columns",
+        "showThird": true
+      }
+    },
+    {
+      "key": "columns-wide",
+      "name": "Columns wide",
+      "size": "4x2",
+      "settings": {
+        "layout": "columns",
+        "showThird": true,
+        "showFourth": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "id": "day-progress",
+  "name": "Day Progress",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "How much of the day, week, month and year has passed.",
+  "category": "today",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "bars",
+      "options": [
+        "bars",
+        "rings"
+      ]
+    },
+    {
+      "key": "showDay",
+      "type": "boolean",
+      "label": "Day",
+      "default": true
+    },
+    {
+      "key": "showWeek",
+      "type": "boolean",
+      "label": "Week",
+      "default": true
+    },
+    {
+      "key": "showMonth",
+      "type": "boolean",
+      "label": "Month",
+      "default": true
+    },
+    {
+      "key": "showYear",
+      "type": "boolean",
+      "label": "Year",
+      "default": true
+    },
+    {
+      "key": "weekStart",
+      "type": "select",
+      "label": "Week starts on",
+      "default": "Monday",
+      "options": [
+        "Monday",
+        "Sunday"
+      ],
+      "showIf": {
+        "key": "showWeek",
+        "equals": true
+      }
+    },
+    {
+      "key": "accentOnly",
+      "type": "boolean",
+      "label": "Use accent color for all",
+      "default": false
+    }
+  ],
+  "variants": [
+    {
+      "key": "bars",
+      "name": "Bars",
+      "size": "2x2",
+      "settings": {
+        "style": "bars"
+      }
+    },
+    {
+      "key": "bars-compact",
+      "name": "Bars compact",
+      "size": "2x1",
+      "settings": {
+        "style": "bars",
+        "showMonth": false
+      }
+    },
+    {
+      "key": "rings",
+      "name": "Rings",
+      "size": "4x2",
+      "settings": {
+        "style": "rings"
+      }
+    },
+    {
+      "key": "rings-small",
+      "name": "Rings small",
+      "size": "2x1",
+      "settings": {
+        "style": "rings",
+        "showYear": false
+      }
+    }
+  ]
+}

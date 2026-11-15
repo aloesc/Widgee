@@ -1,0 +1,138 @@
+{
+  "id": "clock",
+  "name": "Clock",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Digital and analog clocks in many styles, with time zone, 12/24-hour format and seconds.",
+  "category": "clock",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "digital",
+      "options": [
+        "digital",
+        "analog",
+        "bold",
+        "stacked",
+        "minimal",
+        "mono",
+        "analog-minimal",
+        "analog-dots",
+        "analog-seconds"
+      ]
+    },
+    {
+      "key": "hour12",
+      "type": "boolean",
+      "label": "12-hour format (digital)",
+      "default": false
+    },
+    {
+      "key": "showSeconds",
+      "type": "boolean",
+      "label": "Show seconds",
+      "default": true
+    },
+    {
+      "key": "timezone",
+      "type": "string",
+      "label": "Time zone (IANA, empty = system)",
+      "default": ""
+    }
+  ],
+  "variants": [
+    {
+      "key": "analog",
+      "name": "Analog",
+      "size": "1x1",
+      "settings": {
+        "style": "analog"
+      }
+    },
+    {
+      "key": "digital",
+      "name": "Digital",
+      "size": "2x1",
+      "settings": {
+        "style": "digital"
+      }
+    },
+    {
+      "key": "analog-wide",
+      "name": "Analog with date",
+      "size": "2x1",
+      "settings": {
+        "style": "analog"
+      }
+    },
+    {
+      "key": "bold",
+      "name": "Bold",
+      "size": "2x1",
+      "settings": {
+        "style": "bold"
+      }
+    },
+    {
+      "key": "stacked",
+      "name": "Stacked",
+      "size": "2x2",
+      "settings": {
+        "style": "stacked"
+      }
+    },
+    {
+      "key": "minimal",
+      "name": "Minimal",
+      "size": "2x1",
+      "settings": {
+        "style": "minimal"
+      }
+    },
+    {
+      "key": "mono",
+      "name": "Mono",
+      "size": "2x1",
+      "settings": {
+        "style": "mono"
+      }
+    },
+    {
+      "key": "analog-minimal",
+      "name": "Analog minimal",
+      "size": "1x1",
+      "settings": {
+        "style": "analog-minimal"
+      }
+    },
+    {
+      "key": "analog-dots",
+      "name": "Analog dots",
+      "size": "1x1",
+      "settings": {
+        "style": "analog-dots"
+      }
+    },
+    {
+      "key": "analog-seconds",
+      "name": "Analog large seconds",
+      "size": "2x2",
+      "settings": {
+        "style": "analog-seconds"
+      }
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "id": "storage",
+  "name": "Storage",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Disk space used and free, in GB. Ring, bar or detailed.",
+  "category": "system",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [
+      "disk"
+    ],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "ring",
+      "options": [
+        "ring",
+        "bar",
+        "detailed"
+      ]
+    },
+    {
+      "key": "show",
+      "type": "select",
+      "label": "Main value",
+      "default": "Used",
+      "options": [
+        "Used",
+        "Free"
+      ]
+    },
+    {
+      "key": "colorMode",
+      "type": "select",
+      "label": "Color",
+      "default": "Auto",
+      "options": [
+        "Auto",
+        "Accent",
+        "Custom"
+      ]
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Custom color",
+      "default": "#0A84FF",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom"
+      }
+    }
+  ],
+  "variants": [
+    {
+      "key": "ring",
+      "name": "Ring",
+      "size": "1x1",
+      "settings": {
+        "style": "ring"
+      }
+    },
+    {
+      "key": "free",
+      "name": "Free space",
+      "size": "2x1",
+      "settings": {
+        "style": "ring",
+        "show": "Free"
+      }
+    },
+    {
+      "key": "bar",
+      "name": "Bar",
+      "size": "2x1",
+      "settings": {
+        "style": "bar"
+      }
+    },
+    {
+      "key": "detailed",
+      "name": "Detailed",
+      "size": "2x2",
+      "settings": {
+        "style": "detailed"
+      }
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "id": "network",
+  "name": "Network",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Download and upload speed. Numbers or live graph.",
+  "category": "system",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [
+      "network"
+    ],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "numbers",
+      "options": [
+        "numbers",
+        "graph"
+      ]
+    },
+    {
+      "key": "units",
+      "type": "select",
+      "label": "Units",
+      "default": "Bytes",
+      "options": [
+        "Bytes",
+        "Bits"
+      ]
+    },
+    {
+      "key": "downColor",
+      "type": "color",
+      "label": "Download color",
+      "default": "#0A84FF"
+    },
+    {
+      "key": "upColor",
+      "type": "color",
+      "label": "Upload color",
+      "default": "#FF9F0A"
+    }
+  ],
+  "variants": [
+    {
+      "key": "numbers",
+      "name": "Numbers",
+      "size": "1x1",
+      "settings": {
+        "style": "numbers"
+      }
+    },
+    {
+      "key": "numbers-wide",
+      "name": "Numbers wide",
+      "size": "2x1",
+      "settings": {
+        "style": "numbers"
+      }
+    },
+    {
+      "key": "graph",
+      "name": "Graph",
+      "size": "2x1",
+      "settings": {
+        "style": "graph"
+      }
+    },
+    {
+      "key": "graph-large",
+      "name": "Graph large",
+      "size": "2x2",
+      "settings": {
+        "style": "graph"
+      }
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "id": "battery",
+  "name": "Battery",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Battery level with charging state. Ring, bar or detailed status.",
+  "category": "battery",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [
+      "battery"
+    ],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "ring",
+      "options": [
+        "ring",
+        "bar",
+        "status"
+      ]
+    },
+    {
+      "key": "colorMode",
+      "type": "select",
+      "label": "Color",
+      "default": "Auto",
+      "options": [
+        "Auto",
+        "Accent",
+        "Custom"
+      ]
+    },
+    {
+      "key": "color",
+      "type": "color",
+      "label": "Custom color",
+      "default": "#30D158",
+      "showIf": {
+        "key": "colorMode",
+        "equals": "Custom"
+      }
+    }
+  ],
+  "variants": [
+    {
+      "key": "ring",
+      "name": "Ring",
+      "size": "1x1",
+      "settings": {
+        "style": "ring"
+      }
+    },
+    {
+      "key": "ring-wide",
+      "name": "Ring and status",
+      "size": "2x1",
+      "settings": {
+        "style": "ring"
+      }
+    },
+    {
+      "key": "bar",
+      "name": "Bar",
+      "size": "2x1",
+      "settings": {
+        "style": "bar"
+      }
+    },
+    {
+      "key": "status",
+      "name": "Status",
+      "size": "2x2",
+      "settings": {
+        "style": "status"
+      }
+    }
+  ]
+}

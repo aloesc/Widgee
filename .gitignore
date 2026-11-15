@@ -1,0 +1,12 @@
+.DS_Store
+.build/
+.swiftpm/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+build/
+node_modules/
+*.dmg
+dist/
+Widgee.xcodeproj/
+*.xcworkspace/xcuserdata/

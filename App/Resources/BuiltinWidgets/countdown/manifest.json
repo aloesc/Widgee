@@ -1,0 +1,95 @@
+{
+  "id": "countdown",
+  "name": "Countdown",
+  "version": "0.1.0",
+  "author": "Widgee",
+  "sdk": "0.1.0",
+  "description": "Countdown to a date. Big days number or progress ring.",
+  "category": "today",
+  "sizes": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x2"
+  ],
+  "permissions": {
+    "system": [],
+    "network": []
+  },
+  "settings": [
+    {
+      "key": "style",
+      "type": "select",
+      "label": "Style",
+      "default": "days",
+      "options": [
+        "days",
+        "ring"
+      ]
+    },
+    {
+      "key": "title",
+      "type": "string",
+      "label": "Title",
+      "default": "New Year"
+    },
+    {
+      "key": "date",
+      "type": "string",
+      "label": "Date (YYYY-MM-DD)",
+      "default": "2027-01-01"
+    },
+    {
+      "key": "startDate",
+      "type": "string",
+      "label": "Start date for progress (YYYY-MM-DD, empty = last 365 days)",
+      "default": "",
+      "showIf": {
+        "key": "style",
+        "equals": "ring"
+      }
+    },
+    {
+      "key": "showHours",
+      "type": "boolean",
+      "label": "Show hours",
+      "default": false
+    }
+  ],
+  "variants": [
+    {
+      "key": "days",
+      "name": "Days",
+      "size": "1x1",
+      "settings": {
+        "style": "days"
+      }
+    },
+    {
+      "key": "days-wide",
+      "name": "Days and hours",
+      "size": "2x1",
+      "settings": {
+        "style": "days",
+        "showHours": true
+      }
+    },
+    {
+      "key": "ring",
+      "name": "Ring",
+      "size": "1x1",
+      "settings": {
+        "style": "ring"
+      }
+    },
+    {
+      "key": "ring-large",
+      "name": "Ring large",
+      "size": "2x2",
+      "settings": {
+        "style": "ring",
+        "showHours": true
+      }
+    }
+  ]
+}

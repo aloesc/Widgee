@@ -1,0 +1,50 @@
+name: Widgee
+options:
+  bundleIdPrefix: io.github.aloesc
+  deploymentTarget:
+    macOS: "26.0"
+packages:
+  WidgeeKit:
+    path: Packages/WidgeeKit
+targets:
+  Widgee:
+    type: application
+    platform: macOS
+    sources:
+      - App/Sources
+      - path: App/Resources
+        excludes:
+          - BuiltinWidgets
+      - path: App/Resources/BuiltinWidgets
+        type: folder
+    dependencies:
+      - package: WidgeeKit
+        product: WidgeeCore
+      - package: WidgeeKit
+        product: Metrics
+      - package: WidgeeKit
+        product: WidgetHost
+      - package: WidgeeKit
+        product: Renderer
+      - package: WidgeeKit
+        product: Background
+      - package: WidgeeKit
+        product: AgentPrompt
+      - package: WidgeeKit
+        product: Layout
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.aloesc.macoswidgets
+        PRODUCT_NAME: Widgee
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSLocationUsageDescription: "Widgee использует ваше местоположение только по нажатию кнопки «Использовать текущее местоположение», чтобы показать погоду для вашего города."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Widgee использует ваше местоположение только по нажатию кнопки «Использовать текущее местоположение», чтобы показать погоду для вашего города."
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        ENABLE_HARDENED_RUNTIME: NO
