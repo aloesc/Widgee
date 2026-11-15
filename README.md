@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/banner.png" alt="Widgee: desktop widgets for macOS 26+" width="100%">
+</p>
+
 # Widgee
 
 Desktop widgets for macOS, written in JavaScript and rendered natively with SwiftUI. Widgee is a menu bar app that places widgets on your desktop. It shows a Dock icon only while its window is open.
@@ -8,7 +12,11 @@ Source code and releases: <https://github.com/aloesc/Widgee>. Bug reports and id
 
 ## Screenshots
 
-_Screenshots are coming soon._
+![Widgets on the desktop](docs/screenshots/desktop.png)
+
+| Gallery | Create a widget with an AI agent |
+| --- | --- |
+| ![Gallery](docs/screenshots/gallery.png) | ![Create Widget](docs/screenshots/create-widget.png) |
 
 ## Requirements
 

@@ -5,7 +5,13 @@ struct ConfigStore: Sendable {
     let url: URL
 
     static var supportDirectory: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        #if DEBUG
+        // Изолированный конфиг для скриншотов и автотестов: не трогаем данные пользователя.
+        if let dir = ProcessInfo.processInfo.environment["WIDGEE_SUPPORT_DIR"] {
+            return URL(fileURLWithPath: dir, isDirectory: true)
+        }
+        #endif
+        return FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("Widgee", isDirectory: true)
     }
     static var userWidgetsDirectory: URL {
