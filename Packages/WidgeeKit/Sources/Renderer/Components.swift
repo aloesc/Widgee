@@ -166,11 +166,12 @@ struct DigitalClockView: View {
         let part = p.string("part") ?? "all"
         let mono = p.bool("monospaced") ?? false
         let box = ctx.fitBox(p)
-        let eff = box.map { $0.height / 1.2 } ?? size
-        let m = ctx.textMultiplier
         TimelineView(.periodic(from: .now, by: 1)) { tl in
-            let t = Text(DigitalClockView.format(tl.date, timeZone: tz, hour12: h12, seconds: secs, part: part))
-                .font(mono ? .system(size: eff * m, weight: ctx.weightOverride ?? weight, design: .monospaced) : ctx.font(size: eff, weight: weight))
+            let text = DigitalClockView.format(tl.date, timeZone: tz, hour12: h12, seconds: secs, part: part)
+            let spec = TextSpec(text: text, weight: weight, monospaced: mono, monospacedDigit: true)
+            let eff = box.map { ctx.fitSize(spec, box: $0) } ?? size * ctx.textMultiplier
+            let t = Text(text)
+                .font(mono ? .system(size: eff, weight: ctx.weightOverride ?? weight, design: .monospaced) : ctx.font(size: eff, weight: weight))
                 .monospacedDigit()
                 .lineLimit(1)
                 .foregroundStyle(color)

@@ -6,9 +6,8 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
-// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
-let AUTO = false;
-const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Текст рисуется fit-кеглем в коробке w x h (pt). Ручной «Text size» (ctx.theme.textScale) применяет хост.
+const T = (o, w, h) => (w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
 // Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
 const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
@@ -83,7 +82,7 @@ function listView(list, st, al, w, h) {
     VStack({ spacing: 1, alignment: "leading" },
       Text(T({ text: c.label, size: ls, weight: "medium", align: sideL, lineLimit: 1 }, boxLW, hint && c.hint !== "" ? rowH * 0.58 : rowH * 0.9)),
       hint && c.hint !== "" ? Text(T({ text: c.hint, size: ls * 0.75, color: "secondary", align: sideL, lineLimit: 1 }, boxLW, rowH * 0.32)) : null),
-    DigitalClock(T({ timeZone: c.tz, hour12: st.hour12 === true, showSeconds: st.showSeconds === true, size: ts, weight: "medium", ...(AUTO ? { align: sideT } : {}) }, boxTW, rowH * 0.9))));
+    DigitalClock(T({ timeZone: c.tz, hour12: st.hour12 === true, showSeconds: st.showSeconds === true, size: ts, weight: "medium", align: sideT }, boxTW, rowH * 0.9))));
   return VStack({ spacing: 0, alignment: "center", padding: PAD, width: w, height: h }, Spacer({ minLength: 0 }), ...rows.flatMap((r, i) => (i ? [Spacer({ minLength: 2 }), r] : [r])), Spacer({ minLength: 0 }));
 }
 
@@ -95,10 +94,10 @@ function columnsView(list, st, al, w, h) {
   const side = al.mode === "auto" ? "center" : al.v;
   const showHint = (c) => ah >= 90 && c.hint !== "";
   const cols = list.map((c) => { const ch = hts(ah, 4, 0.22, 0.56, showHint(c) ? 0.16 : 0);
-    return VStack({ spacing: AUTO ? 4 : Math.max(2, ts * 0.12), alignment: side, width: cw },
+    return VStack({ spacing: 4, alignment: side, width: cw },
     Spacer({ minLength: 0 }),
     Text(T({ text: c.label, size: fitSize(c.label, clamp(ts * 0.45, 10, 30), cw - 4), weight: "medium", color: "secondary", align: side, lineLimit: 1 }, cw - 4, ch[0])),
-    DigitalClock(T({ timeZone: c.tz, hour12: st.hour12 === true, showSeconds: st.showSeconds === true, size: ts, weight: "medium", ...(AUTO ? { align: side } : {}) }, cw - 4, ch[1])),
+    DigitalClock(T({ timeZone: c.tz, hour12: st.hour12 === true, showSeconds: st.showSeconds === true, size: ts, weight: "medium", align: side }, cw - 4, ch[1])),
     showHint(c) ? Text(T({ text: c.hint, size: clamp(ts * 0.35, 9, 20), color: "secondary", align: side, lineLimit: 1 }, cw - 4, ch[2])) : null,
     Spacer({ minLength: 0 })); });
   return HStack({ spacing: 0, alignment: "center", padding: PAD, width: w, height: h }, ...cols);
@@ -108,7 +107,6 @@ export default defineWidget({
   sources: { now: timer(60) },
   render(ctx) {
     const st = ctx.settings || {};
-    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const t = ctx.data && ctx.data.now && num(ctx.data.now.now) ? ctx.data.now.now : Date.now();

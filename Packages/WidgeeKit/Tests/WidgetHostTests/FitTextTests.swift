@@ -15,7 +15,7 @@ private let widgetIDs: [String] = {
         .sorted()
 }()
 
-/// Виджеты, переведённые на fit в Auto-режиме (system-monitor пока не переведён).
+/// Виджеты с fit-коробками (system-monitor задаёт размеры через size).
 private let fitWidgets: Set<String> = [
     "clock", "weather", "battery", "storage", "network", "calendar", "world-clock", "countdown", "day-progress",
 ]
@@ -51,13 +51,21 @@ private func isFit(_ n: UINode) -> Bool {
 
 private func isFitText(_ n: UINode) -> Bool { (n.type == "Text" || n.type == "DigitalClock") && isFit(n) }
 
+/// Дерево без меняющихся со временем данных (тексты и значения): только раскладка и размеры.
+private func layout(_ n: UINode) -> UINode {
+    var n = n
+    for k in ["text", "value", "values"] { n.props[k] = nil }
+    n.children = n.children.map(layout)
+    return n
+}
+
 private func validFit(_ n: UINode) -> Bool {
     isFitText(n) && (number(n.props["width"]) ?? 0) > 0 && (number(n.props["height"]) ?? 0) > 0
 }
 
 @Suite struct FitTextTests {
     @Test(arguments: widgetIDs)
-    func fitInAutoAndNotInManual(_ id: String) async throws {
+    func fitBoxesInAutoAndManual(_ id: String) async throws {
         let m = try WidgetManifest.parse(Data(contentsOf: root.appendingPathComponent(id).appendingPathComponent("manifest.json")))
         var defaults: [String: JSONValue] = [:]
         for f in m.settings { if let d = f.default { defaults[f.key] = d } }
@@ -89,11 +97,11 @@ private func validFit(_ n: UINode) -> Bool {
                             #expect(sum <= sz.2 * 1.08, "\(tag): fit boxes \(sum) > height \(sz.2)")
                         }
 
-                        // Manual: textScale != nil -> no fit.
+                        // Manual: раскладка та же, процент применяет хост (TextScalePass), а не виджет.
                         for scale in [1.5, 0.5] {
                             let manual = try await rt.render(RenderContext(size: size, theme: Theme(alignment: a, textScale: scale),
                                                                           settings: settings, data: data))
-                            #expect(!allNodes(manual).contains(where: isFit), "\(tag): fit with textScale \(scale)")
+                            #expect(layout(manual) == layout(auto), "\(tag): layout depends on textScale \(scale)")
                         }
                     }
                 }

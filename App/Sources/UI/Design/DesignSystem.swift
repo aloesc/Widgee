@@ -369,7 +369,10 @@ struct FlowLayout: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxW = proposal.width ?? .infinity
+        // Без заданной ширины (ideal-замер внутри ScrollView) не раскладываем всё в одну строку:
+        // иначе контейнер получает ширину в сотни pt и выпирает за панель. Берём ширину самого широкого элемента.
+        let widest = subviews.map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
+        let maxW = (proposal.width.map { $0.isFinite ? $0 : widest }) ?? widest
         var x: CGFloat = 0, y: CGFloat = 0, rowH: CGFloat = 0, w: CGFloat = 0
         for s in subviews {
             let sz = s.sizeThatFits(.unspecified)

@@ -212,15 +212,19 @@ private func decode(_ s: String) throws -> UINode {
         #expect(a <= 200 && b <= 400)
     }
 
-    @MainActor @Test func textScaleEnlargesAndDisablesFit() throws {
+    @MainActor @Test func textScaleScalesPlainAndFitText() throws {
         let plain = ##"{"type":"Text","props":{"text":"Hello","size":20,"color":"#000000"}}"##
         let s1 = try inkWidth(plain, textScale: 1)
         let s2 = try inkWidth(plain, textScale: 2)
         #expect(s2 > s1 && s1 > 0)
-        // fit игнорируется при ручном масштабе: эквивалентно обычному тексту (size по умолчанию 14).
-        let f = try inkWidth(fitText(400, 60), textScale: 1)
-        let tiny = try inkWidth(fitText(400, 60))
-        #expect(f < tiny)
+        // fit работает и при ручном масштабе: 100 % совпадает с Auto, 50 % вдвое мельче, выше 100 % коробка не даёт расти.
+        let auto = try inkWidth(fitText(400, 60))
+        let full = try inkWidth(fitText(400, 60), textScale: 1)
+        let half = try inkWidth(fitText(400, 60), textScale: 0.5)
+        let big = try inkWidth(fitText(400, 60), textScale: 3)
+        #expect(abs(full - auto) <= max(3, auto / 20))
+        #expect(abs(half * 2 - auto) <= max(4, auto / 10))
+        #expect(big <= 400 && abs(big - auto) <= max(3, auto / 20))
     }
 
     @MainActor @Test func fontWeightOverridesTextWeight() throws {

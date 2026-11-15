@@ -31,7 +31,7 @@ declare module "widgee" {
   export interface TextProps extends CommonProps {
     text?: string; size?: number; weight?: Weight; color?: Color;
     align?: "leading" | "center" | "trailing"; lineLimit?: number; monospacedDigit?: boolean;
-    /** Auto: самый крупный кегль, который влезает в коробку width x height (обязательны оба). Игнорируется при ctx.theme.textScale != null. */
+    /** Самый крупный кегль, который влезает в коробку width x height (обязательны оба). Ручной размер текста поверх этого применяет хост. */
     fit?: boolean;
   }
   export interface ImageProps extends CommonProps {
@@ -149,7 +149,7 @@ declare module "widgee" {
     alignment: ContentAlignment;
     /** Имя семейства выбранного пользователем шрифта (напр. "Georgia"); отсутствует = шрифт по fontDesign. Рендерер сам применяет шрифт. */
     fontFamily?: string;
-    /** Ручной множитель размера текста (0.25...4); null/отсутствует = Auto: используйте fit с коробкой. Хост сам умножает все размеры. */
+    /** Ручной размер текста (0.25...4); null/отсутствует = Auto. Применяет хост: раскладку от него менять не нужно, используйте fit с коробкой. */
     textScale?: number | null;
     /** Вес текста, выбранный пользователем; null/отсутствует = Auto (собственные веса). Когда задан, хост применяет его ко всему тексту: виджеты ничего делать не обязаны. */
     fontWeight?: FontWeight | null;

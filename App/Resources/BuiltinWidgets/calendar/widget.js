@@ -6,9 +6,8 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
-// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
-let AUTO = false;
-const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Текст рисуется fit-кеглем в коробке w x h (pt). Ручной «Text size» (ctx.theme.textScale) применяет хост.
+const T = (o, w, h) => (w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
 // Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
 const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
@@ -60,7 +59,7 @@ function monthView(now, st, al, w, h) {
   const mname = MONTHS[m];
   // Название месяца и год получают явную ширину: иначе Text рядом с Spacer в HStack обрезается («Nove…»).
   const ts = clamp(Math.min(ah * 0.1, aw / ((mname.length + 4) * 0.62 + 1)), 10, 34);
-  const tH = AUTO ? Math.max(16, ah * 0.12) : ts * 1.4;
+  const tH = Math.max(16, ah * 0.12);
   const ch = clamp((ah - tH - 6) / (rows + 0.6), 10, 80), cw = aw / 7;
   const d = Math.min(cw, ch) * 0.9, fs = clamp(Math.min(cw * 0.5, ch * 0.5), 7, 34);
   const names = letters(first);
@@ -109,9 +108,8 @@ function dateView(now, al, w, h) {
   const wd = WEEKDAYS[now.getDay()], my = MONTHS[now.getMonth()] + " " + now.getFullYear(), dn = String(now.getDate());
   if (aw >= ah * 1.8) {
     const f = clamp(Math.min(aw / 260, ah / 90), 0.7, 3);
-    const colW = Math.max(60, aw - 90 * f * 1.3 - 16);
     const side = al.mode === "right" ? "trailing" : al.mode === "center" ? "center" : "leading";
-    const bigW = AUTO ? aw * 0.4 : 0, colW2 = AUTO ? aw - bigW - 16 : colW, ih = hts(ah, 2 * f, 0.6, 0.4);
+    const bigW = aw * 0.4, colW2 = aw - bigW - 16, ih = hts(ah, 2 * f, 0.6, 0.4);
     const big = Text(T({ text: dn, size: 80 * f, weight: "semibold", color: "accent", monospacedDigit: true, align: "center", lineLimit: 1 }, bigW, ah));
     const info = VStack({ spacing: 2 * f, alignment: side, width: colW2 },
       Text(T({ text: wd, size: fitSize(wd, 24 * f, colW2), weight: "semibold", align: side, lineLimit: 1 }, colW2, ih[0])),
@@ -131,7 +129,6 @@ export default defineWidget({
   sources: { now: timer(60) },
   render(ctx) {
     const st = ctx.settings || {};
-    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const t = ctx.data && ctx.data.now && num(ctx.data.now.now) ? ctx.data.now.now : Date.now();

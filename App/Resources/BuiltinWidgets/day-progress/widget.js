@@ -6,9 +6,8 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
-// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
-let AUTO = false;
-const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Текст рисуется fit-кеглем в коробке w x h (pt). Ручной «Text size» (ctx.theme.textScale) применяет хост.
+const T = (o, w, h) => (w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
 // Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
 const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
@@ -92,7 +91,6 @@ export default defineWidget({
   sources: { now: timer(60) },
   render(ctx) {
     const st = ctx.settings || {};
-    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const t = ctx.data && ctx.data.now && num(ctx.data.now.now) ? ctx.data.now.now : Date.now();
     const list = items(new Date(t), st);

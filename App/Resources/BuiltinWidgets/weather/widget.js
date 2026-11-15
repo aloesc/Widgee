@@ -131,9 +131,8 @@ function alignInfo(ctx) {
   return { mode, v, left: mode === "left", right: mode === "right", centered: mode === "center" || mode === "auto" };
 }
 
-// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
-let AUTO = false;
-const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Текст рисуется fit-кеглем в коробке w x h (pt). Ручной «Text size» (ctx.theme.textScale) применяет хост.
+const T = (o, w, h) => (w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
 
 const STYLES = ["default", "compact", "hourly", "forecast", "big"];
 const fc = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -159,7 +158,7 @@ function compactView(c) {
   const cs = fc(t * 0.38, 11, 30);
   const desc = c.ah >= 130;
   const av = c.ah - 4 * (desc ? 2 : 1), cb = av * (desc ? 0.24 : 0.3), tb = av * (desc ? 0.52 : 0.7), db = av * 0.24;
-  const isz = AUTO ? tb * 0.9 : t * 0.9;
+  const isz = tb * 0.9;
   return frame(c, Spacer(),
     Text(T({ text: c.city.name, size: cs, weight: "semibold", color: WHITE, align: c.cv, lineLimit: 1 }, c.aw, cb)),
     flow(c, t * 0.18,
@@ -222,9 +221,7 @@ export default defineWidget({
   sources: (s) => ({ w: http(forecastURL(s), { every: 900 }) }),
 
   render(ctx) {
-    const sc = ctx.size.sizeClass;
     const s = ctx.settings || {};
-    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const city = validCity(s.city);
     const res = ctx.data && ctx.data.w;
     const v = res && res.value && typeof res.value === "object" ? res.value : null;

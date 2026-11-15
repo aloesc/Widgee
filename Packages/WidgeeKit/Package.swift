@@ -26,7 +26,7 @@ let package = Package(
         .testTarget(name: "WidgeeCoreTests", dependencies: ["WidgeeCore"]),
         .testTarget(name: "MetricsTests", dependencies: ["Metrics"]),
         .testTarget(name: "WidgetHostTests", dependencies: ["WidgetHost"]),
-        .testTarget(name: "RendererTests", dependencies: ["Renderer"]),
+        .testTarget(name: "RendererTests", dependencies: ["Renderer", "WidgetHost"]),
         .testTarget(name: "BackgroundTests", dependencies: ["Background"]),
     ]
 )

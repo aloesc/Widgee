@@ -40,6 +40,11 @@ struct Props {
 struct RenderContext {
     var theme: Theme
     var sizeClass: SizeClass
+    /// Ручной «Text size»: множитель `size` обычного текста и множитель кегля в коробке `fit` (см. `TextScalePass`).
+    var textMultiplier: CGFloat = 1
+    var fitScale: CGFloat = 1
+
+    var manual: Bool { theme.textScale != nil }
 
     /// Масштаб дефолтных размеров по классу виджета.
     var scale: CGFloat {
@@ -74,26 +79,27 @@ struct RenderContext {
         }
     }
 
-    /// Единая точка выбора шрифта: `theme.fontFamily` (если установлен) иначе системный шрифт с `fontDesign`.
-    /// Множитель размера текста (1 в Auto), клэмп 0.25...4.
-    var textMultiplier: CGFloat {
-        guard let s = theme.textScale, s.isFinite else { return 1 }
-        return CGFloat(min(max(s, 0.25), 4))
+    /// Коробка для `fit`: нужны и `width`, и `height`. Работает и в Auto, и при ручном «Text size».
+    func fitBox(_ p: Props) -> CGSize? {
+        guard p.bool("fit") ?? false, let w = p.length("width"), let h = p.length("height"), w > 0, h > 0 else { return nil }
+        return CGSize(width: w, height: h)
     }
 
-    /// Коробка для `fit`: только в Auto (textScale == nil) и при заданных width и height.
-    func fitBox(_ p: Props) -> CGSize? {
-        guard p.bool("fit") ?? false, theme.textScale == nil,
-              let w = p.length("width"), let h = p.length("height"), w > 0, h > 0 else { return nil }
-        return CGSize(width: w, height: h)
+    /// Кегль текста в коробке `fit`. Auto: верхняя граница height/1.2, дальше сжимает SwiftUI.
+    /// Вручную: кегль, вписанный по реальным метрикам шрифта, умноженный на `fitScale`.
+    @MainActor func fitSize(_ t: TextSpec, box: CGSize) -> CGFloat {
+        guard manual else { return box.height / 1.2 }
+        return TextMetrics(theme: theme).fittedSize(t.text, box: box, weight: t.weight, monospaced: t.monospaced,
+                                                    monospacedDigit: t.monospacedDigit) * fitScale
     }
 
     /// Вес, заданный пользователем (`theme.fontWeight`); nil = Auto.
     var weightOverride: Font.Weight? { parseWeightStrict(theme.fontWeight) }
 
-    func font(size rawSize: CGFloat, weight ownWeight: Font.Weight = .regular) -> Font {
+    /// Единая точка выбора шрифта: `theme.fontFamily` (если установлен) иначе системный шрифт с `fontDesign`.
+    /// Размер берётся как есть: ручной множитель применяет вызывающий (`textMultiplier` / `fitSize`).
+    func font(size: CGFloat, weight ownWeight: Font.Weight = .regular) -> Font {
         let weight = weightOverride ?? ownWeight
-        let size = rawSize * textMultiplier
         if let family = theme.fontFamily, !family.isEmpty,
            let name = FontResolver.postScriptName(family: family, weight: weight) {
             return .custom(name, fixedSize: size)

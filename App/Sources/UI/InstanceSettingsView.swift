@@ -279,7 +279,8 @@ struct TextSizeRow: View {
                 }
                 .labelsHidden().accessibilityLabel("Text size")
             }
-            Text("Auto fills the widget with the largest text that fits.")
+            Text(scale == nil ? "Auto fills the widget with the largest text that fits."
+                 : "100% matches Auto. Above it the main text grows until the widget is full.")
                 .font(.dsCaption).foregroundStyle(.secondary)
         }
         .onAppear(perform: sync)

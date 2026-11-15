@@ -22,7 +22,10 @@ public struct WidgetTreeView: View {
     }
 
     public var body: some View {
-        NodeView(node: node, ctx: RenderContext(theme: theme, sizeClass: sizeClass), depth: 0)
+        var ctx = RenderContext(theme: theme, sizeClass: sizeClass)
+        let scaled = TextScalePass.run(node, theme: theme, defaults: ctx.scale)
+        let _ = (ctx.textMultiplier = scaled.plain, ctx.fitScale = scaled.fit)
+        NodeView(node: scaled.node, ctx: ctx, depth: 0)
     }
 }
 
@@ -36,6 +39,9 @@ struct NodeView: View {
             PlaceholderView(label: "depth limit")
         } else {
             content.modifier(CommonProps(p: Props(node.props), frameAlignment: frameAlignment))
+                // Spacer получает место последним: иначе стек делит его со сжимаемой строкой поровну,
+                // и подпись рядом со Spacer ужимается до минимума или усекается до «…».
+                .layoutPriority(node.type == "Spacer" ? -1 : 0)
         }
     }
 
@@ -89,12 +95,12 @@ struct NodeView: View {
 
     @ViewBuilder private func textView(_ p: Props) -> some View {
         if let box = ctx.fitBox(p) {
-            let size = box.height / 1.2
-            let ft = Text(p.string("text") ?? "")
-                .font(ctx.font(size: size, weight: parseWeight(p.string("weight"))))
+            let spec = TextSpec(node)
+            let ft = Text(spec.text)
+                .font(ctx.font(size: ctx.fitSize(spec, box: box), weight: spec.weight))
                 .foregroundStyle(ctx.color(p.string("color")))
             let f = Group {
-                if p.bool("monospacedDigit") ?? false { ft.monospacedDigit() } else { ft }
+                if spec.monospacedDigit { ft.monospacedDigit() } else { ft }
             }
             f.lineLimit(1).minimumScaleFactor(0.02)
                 .frame(width: box.width, height: box.height, alignment: fitAlignment(p.string("align")))
@@ -104,14 +110,16 @@ struct NodeView: View {
     }
 
     @ViewBuilder private func plainText(_ p: Props) -> some View {
-        let size = p.length("size") ?? 14 * ctx.scale
+        let limit = p.int("lineLimit", in: 1...50)
+        let size = (p.length("size") ?? 14 * ctx.scale) * TextScalePass.plainScale(ctx.textMultiplier, lineLimit: limit)
         let t = Text(p.string("text") ?? "")
             .font(ctx.font(size: size, weight: parseWeight(p.string("weight"))))
             .foregroundStyle(ctx.color(p.string("color")))
             .multilineTextAlignment(textAlign(p.string("align")))
         // Однострочный текст сжимается, чтобы поместиться (широкие шрифты вроде Nerd Font), а не обрезается «…».
-        let limit = p.int("lineLimit", in: 1...50)
-        let scale: CGFloat = limit == 1 ? (p.double("minScale").map { CGFloat(min(1, max(0.2, $0))) } ?? 0.4) : 1
+        // Увеличенная вручную строка может сжаться обратно до того же минимума, что и в Auto.
+        let floor = 0.4 / max(1, ctx.textMultiplier)
+        let scale: CGFloat = limit == 1 ? (p.double("minScale").map { CGFloat(min(1, max(0.2, $0))) } ?? floor) : 1
         if p.bool("monospacedDigit") ?? false {
             t.monospacedDigit().lineLimit(limit).minimumScaleFactor(scale)
         } else {
