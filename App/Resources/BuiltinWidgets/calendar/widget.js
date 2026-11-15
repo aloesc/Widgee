@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -55,7 +60,8 @@ function monthView(now, st, al, w, h) {
   const mname = MONTHS[m];
   // Название месяца и год получают явную ширину: иначе Text рядом с Spacer в HStack обрезается («Nove…»).
   const ts = clamp(Math.min(ah * 0.1, aw / ((mname.length + 4) * 0.62 + 1)), 10, 34);
-  const ch = clamp((ah - ts * 1.4 - 6) / (rows + 0.6), 10, 80), cw = aw / 7;
+  const tH = AUTO ? Math.max(16, ah * 0.12) : ts * 1.4;
+  const ch = clamp((ah - tH - 6) / (rows + 0.6), 10, 80), cw = aw / 7;
   const d = Math.min(cw, ch) * 0.9, fs = clamp(Math.min(cw * 0.5, ch * 0.5), 7, 34);
   const names = letters(first);
   const head = HStack({ spacing: 0 }, ...names.map((n, i) => cell(n, cw, ch * 0.6, 0, fs * 0.8, false, true)));
@@ -70,8 +76,8 @@ function monthView(now, st, al, w, h) {
     weeks.push(HStack({ spacing: 0 }, ...cs));
   }
   const title = split(al, 6,
-    Text({ text: mname, size: ts, weight: "semibold", color: "accent", lineLimit: 1, width: Math.ceil(ts * 0.62 * mname.length + 8) }),
-    Text({ text: String(y), size: ts, color: "secondary", lineLimit: 1, width: Math.ceil(ts * 0.62 * 4 + 8), align: "trailing" }));
+    Text(T({ text: mname, size: ts, weight: "semibold", color: "accent", lineLimit: 1, align: "leading", width: Math.ceil(ts * 0.62 * mname.length + 8) }, aw * 0.6, tH)),
+    Text(T({ text: String(y), size: ts, color: "secondary", lineLimit: 1, width: Math.ceil(ts * 0.62 * 4 + 8), align: "trailing" }, aw * 0.32, tH)));
   return VStack({ spacing: 0, alignment: "center", padding: PAD, width: w, height: h }, Spacer({ minLength: 0 }), title, head, ...weeks, Spacer({ minLength: 0 }));
 }
 
@@ -91,9 +97,10 @@ function weekView(now, st, al, w, h) {
       Text({ text: names[i], size: 11 * f, color: "secondary", align: "center", lineLimit: 1 }),
       cell(String(dt.getDate()), 30 * f, 30 * f, 28 * f, 15 * f, today, isWeekend(first, i))));
   }
+  const tbh = Math.min(ah * 0.2, 14 * f * 1.6);
   const title = hrow(al.lead, 6 * f,
-    Text({ text: MONTHS[now.getMonth()], size: 14 * f, weight: "semibold", color: "accent", lineLimit: 1 }),
-    Text({ text: String(now.getFullYear()), size: 14 * f, color: "secondary", lineLimit: 1 }));
+    Text(T({ text: MONTHS[now.getMonth()], size: 14 * f, weight: "semibold", color: "accent", align: "leading", lineLimit: 1 }, aw * 0.55, tbh)),
+    Text(T({ text: String(now.getFullYear()), size: 14 * f, color: "secondary", align: "leading", lineLimit: 1 }, aw * 0.3, tbh)));
   return page(w, h, "center", 6 * f, showTitle ? title : null, HStack({ spacing: 0 }, ...cells));
 }
 
@@ -104,24 +111,27 @@ function dateView(now, al, w, h) {
     const f = clamp(Math.min(aw / 260, ah / 90), 0.7, 3);
     const colW = Math.max(60, aw - 90 * f * 1.3 - 16);
     const side = al.mode === "right" ? "trailing" : al.mode === "center" ? "center" : "leading";
-    const big = Text({ text: dn, size: 80 * f, weight: "semibold", color: "accent", monospacedDigit: true, lineLimit: 1 });
-    const info = VStack({ spacing: 2 * f, alignment: side, width: colW },
-      Text({ text: wd, size: fitSize(wd, 24 * f, colW), weight: "semibold", align: side, lineLimit: 1 }),
-      Text({ text: my, size: fitSize(my, 16 * f, colW), color: "secondary", align: side, lineLimit: 1 }));
+    const bigW = AUTO ? aw * 0.4 : 0, colW2 = AUTO ? aw - bigW - 16 : colW, ih = hts(ah, 2 * f, 0.6, 0.4);
+    const big = Text(T({ text: dn, size: 80 * f, weight: "semibold", color: "accent", monospacedDigit: true, align: "center", lineLimit: 1 }, bigW, ah));
+    const info = VStack({ spacing: 2 * f, alignment: side, width: colW2 },
+      Text(T({ text: wd, size: fitSize(wd, 24 * f, colW2), weight: "semibold", align: side, lineLimit: 1 }, colW2, ih[0])),
+      Text(T({ text: my, size: fitSize(my, 16 * f, colW2), color: "secondary", align: side, lineLimit: 1 }, colW2, ih[1])));
     return HStack({ spacing: 16, alignment: "center", padding: PAD, width: w, height: h },
       ...(al.mode === "right" ? [Spacer(), info, big] : al.mode === "left" ? [big, info, Spacer()] : [Spacer(), big, info, Spacer()]));
   }
   const f = clamp(Math.min(aw / 110, ah / 135), 0.7, 3.5);
+  const nh = hts(ah, 2 * f, 0.2, 0.58, 0.22);
   return page(w, h, al.v, 2 * f,
-    Text({ text: wd, size: fitSize(wd, 18 * f, aw), weight: "semibold", color: "accent", align: al.v, lineLimit: 1 }),
-    Text({ text: dn, size: fitSize(dn, 80 * f, aw), weight: "semibold", monospacedDigit: true, align: al.v, lineLimit: 1 }),
-    Text({ text: my, size: fitSize(my, 15 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }));
+    Text(T({ text: wd, size: fitSize(wd, 18 * f, aw), weight: "semibold", color: "accent", align: al.v, lineLimit: 1 }, aw, nh[0])),
+    Text(T({ text: dn, size: fitSize(dn, 80 * f, aw), weight: "semibold", monospacedDigit: true, align: al.v, lineLimit: 1 }, aw, nh[1])),
+    Text(T({ text: my, size: fitSize(my, 15 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, nh[2])));
 }
 
 export default defineWidget({
   sources: { now: timer(60) },
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const t = ctx.data && ctx.data.now && num(ctx.data.now.now) ? ctx.data.now.now : Date.now();

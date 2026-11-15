@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -64,46 +69,51 @@ function daysView(c, title, al, w, h) {
     const f = clamp(Math.min(aw / 260, ah / 90), 0.7, 3);
     const numW = Math.max(50, aw * 0.45), colW = Math.max(60, aw - numW - 16);
     const side = al.mode === "right" ? "trailing" : al.mode === "center" ? "center" : "leading";
+    const lh = hts(ah, 0, c.unit ? 0.72 : 1, 0.28), rh = hts(ah, 2 * f, c.sub ? 0.6 : 1, 0.4);
     const left = VStack({ spacing: 0, alignment: side, width: numW },
-      Text({ text: c.big, size: fitSize(c.big, 64 * f, numW), weight: "semibold", color: "accent", monospacedDigit: true, align: side, lineLimit: 1 }),
-      c.unit ? Text({ text: c.unit, size: fitSize(c.unit, 16 * f, numW), color: "secondary", align: side, lineLimit: 1 }) : null);
+      Text(T({ text: c.big, size: fitSize(c.big, 64 * f, numW), weight: "semibold", color: "accent", monospacedDigit: true, align: side, lineLimit: 1 }, numW, c.unit ? lh[0] : ah)),
+      c.unit ? Text(T({ text: c.unit, size: fitSize(c.unit, 16 * f, numW), color: "secondary", align: side, lineLimit: 1 }, numW, lh[1])) : null);
     const right = VStack({ spacing: 2 * f, alignment: side, width: colW },
-      Text({ text: title, size: fitSize(title, 22 * f, colW), weight: "semibold", align: side, lineLimit: 1 }),
-      c.sub ? Text({ text: c.sub, size: fitSize(c.sub, 14 * f, colW), color: "secondary", align: side, lineLimit: 1 }) : null);
+      Text(T({ text: title, size: fitSize(title, 22 * f, colW), weight: "semibold", align: side, lineLimit: 1 }, colW, c.sub ? rh[0] : ah)),
+      c.sub ? Text(T({ text: c.sub, size: fitSize(c.sub, 14 * f, colW), color: "secondary", align: side, lineLimit: 1 }, colW, rh[1])) : null);
     return HStack({ spacing: 16, alignment: "center", padding: PAD, width: w, height: h }, ...(al.mode === "right" ? [right, left] : [left, right]));
   }
   const f = clamp(Math.min(aw / 110, ah / 130), 0.7, 3.5);
+  const wts = [0.16, 0.5, c.unit ? 0.18 : 0, c.sub ? 0.16 : 0].filter((x) => x > 0);
+  const nh = hts(ah, 2 * f, ...wts);
+  let ni = 0;
   return page(w, h, al.v, 2 * f,
-    Text({ text: title, size: fitSize(title, 15 * f, aw), weight: "semibold", color: "accent", align: al.v, lineLimit: 1 }),
-    Text({ text: c.big, size: fitSize(c.big, 64 * f, aw), weight: "semibold", monospacedDigit: true, align: al.v, lineLimit: 1 }),
-    c.unit ? Text({ text: c.unit, size: fitSize(c.unit, 15 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }) : null,
-    c.sub ? Text({ text: c.sub, size: fitSize(c.sub, 12 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }) : null);
+    Text(T({ text: title, size: fitSize(title, 15 * f, aw), weight: "semibold", color: "accent", align: al.v, lineLimit: 1 }, aw, nh[ni++])),
+    Text(T({ text: c.big, size: fitSize(c.big, 64 * f, aw), weight: "semibold", monospacedDigit: true, align: al.v, lineLimit: 1 }, aw, nh[ni++])),
+    c.unit ? Text(T({ text: c.unit, size: fitSize(c.unit, 15 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, nh[ni++])) : null,
+    c.sub ? Text(T({ text: c.sub, size: fitSize(c.sub, 12 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, nh[ni++])) : null);
 }
 
 function ringView(c, title, al, w, h) {
   const aw = w - PAD * 2, ah = h - PAD * 2;
   const mk = (r) => Ring({ value: c.p, color: "accent", size: r },
     VStack({ spacing: 0, alignment: "center" },
-      Text({ text: c.big, size: fitSize(c.big, r / 3, r * 0.62), weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }),
-      c.unit ? Text({ text: c.unit, size: clamp(r / 9, 8, 28), color: "secondary", align: "center", lineLimit: 1 }) : null));
+      Text(T({ text: c.big, size: fitSize(c.big, r / 3, r * 0.62), weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }, r * 0.62, c.unit ? r * 0.36 : r * 0.5)),
+      c.unit ? Text(T({ text: c.unit, size: clamp(r / 9, 8, 28), color: "secondary", align: "center", lineLimit: 1 }, r * 0.55, r * 0.14)) : null));
   if (aw >= ah * 1.7) {
     const r = clamp(ah, 40, 300), colW = Math.max(40, aw - r - 16);
     const side = al.mode === "right" ? "trailing" : al.mode === "center" ? "center" : "leading";
     const info = VStack({ spacing: 3, alignment: side, width: colW },
-      Text({ text: title, size: fitSize(title, clamp(r * 0.2, 12, 40), colW), weight: "semibold", align: side, lineLimit: 1 }),
-      c.sub ? Text({ text: c.sub, size: fitSize(c.sub, clamp(r * 0.12, 10, 24), colW), color: "secondary", align: side, lineLimit: 1 }) : null);
+      Text(T({ text: title, size: fitSize(title, clamp(r * 0.2, 12, 40), colW), weight: "semibold", align: side, lineLimit: 1 }, colW, hts(ah, 3, c.sub ? 0.6 : 1, 0.4)[0])),
+      c.sub ? Text(T({ text: c.sub, size: fitSize(c.sub, clamp(r * 0.12, 10, 24), colW), color: "secondary", align: side, lineLimit: 1 }, colW, hts(ah, 3, 0.6, 0.4)[1])) : null);
     return HStack({ spacing: 16, alignment: "center", padding: PAD, width: w, height: h }, ...(al.mode === "right" ? [info, mk(r)] : [mk(r), info]));
   }
   const lab = ah >= 110;
   const r = clamp(Math.min(aw, ah - (lab ? 26 : 0)), 36, 300);
   return page(w, h, al.v, 6, mk(r),
-    lab ? Text({ text: title, size: fitSize(title, clamp(r * 0.11, 11, 24), aw), color: "secondary", align: al.v, lineLimit: 1 }) : null);
+    lab ? Text(T({ text: title, size: fitSize(title, clamp(r * 0.11, 11, 24), aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, Math.max(14, ah - r - 12))) : null);
 }
 
 export default defineWidget({
   sources: { now: timer(60) },
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const t = ctx.data && ctx.data.now && num(ctx.data.now.now) ? ctx.data.now.now : Date.now();
     const c = compute(new Date(t), st);

@@ -65,6 +65,35 @@ enum DebugCommands {
                 }
             }
         }
+        // --font <family|system:rounded|system:mono|system:serif|system:standard> — шрифт всем экземплярам.
+        if let f = value("--font") {
+            for inst in state.instances {
+                state.update(inst.id) {
+                    if f.hasPrefix("system:") {
+                        let d = String(f.dropFirst(7))
+                        $0.fontFamily = nil
+                        $0.fontDesign = d == "mono" ? .monospaced : (FontDesign(rawValue: d) ?? .standard)
+                    } else { $0.fontFamily = f }
+                }
+            }
+        }
+        // --text-scale <число|auto> — размер текста всем экземплярам (auto = nil).
+        if let v = value("--text-scale") {
+            for inst in state.instances { state.update(inst.id) { $0.textScale = v == "auto" ? nil : Double(v) } }
+        }
+        // --font-weight <ultraLight|thin|...|black|auto> — вес текста всем экземплярам.
+        if let v = value("--font-weight") {
+            for inst in state.instances { state.update(inst.id) { $0.fontWeight = v == "auto" ? nil : v } }
+        }
+        // --open-font-preview: список шрифтов в обычном окне (для скриншота).
+        if a.contains("--open-font-preview") {
+            let w = NSWindow(contentRect: NSRect(x: 200, y: 300, width: 320, height: 420), styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            w.title = "FontPreview"
+            w.isReleasedWhenClosed = false
+            w.contentView = NSHostingView(rootView: FontPreviewHost())
+            w.makeKeyAndOrderFront(nil)
+            menuPreviewWindow = w
+        }
         if let r = value("--resize").flatMap(WidgetSizePreset.init(rawValue:)) {
             for inst in state.instances { state.resize(inst.id, to: r) }
         }
@@ -97,6 +126,7 @@ enum DebugCommands {
             state.layout = l
             dlog("layout: \(l)")
         }
+        if a.contains("--edit-collapsed") { state.editPanel.debugSetCollapsed(true) }
         if a.contains("--edit") { state.isEditing = true }
         // --edit-off-after N: через N с выключает режим редактирования и логирует видимость панели.
         if let n = value("--edit-off-after").flatMap(Double.init) {
@@ -208,5 +238,10 @@ enum DebugCommands {
         if a.contains("--donate") { AppLinks.open(AppLinks.donate) }
         if a.contains("--open-settings"), let f = state.instances.first { state.openSettings(f.id) }
     }
+}
+
+private struct FontPreviewHost: View {
+    @State private var choice = FontChoice(design: .standard, family: "Georgia")
+    var body: some View { FontListView(choice: $choice) }
 }
 #endif

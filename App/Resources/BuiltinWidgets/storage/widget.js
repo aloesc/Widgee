@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -48,23 +53,23 @@ function ringView(d, al, w, h, c, free) {
   const main = gb(free ? d.free : d.used), word = free ? "free" : "used";
   const mk = (r) => Ring({ value: d.fill, color: c, size: r },
     VStack({ spacing: 0, alignment: "center" },
-      Text({ text: main.n, size: fitSize(main.n, r / 3.6, r * 0.62), weight: "semibold", monospacedDigit: true, lineLimit: 1 }),
-      Text({ text: main.u + " " + word, size: clamp(r / 9, 8, 30), color: "secondary", lineLimit: 1 })));
+      Text(T({ text: main.n, size: fitSize(main.n, r / 3.6, r * 0.62), weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }, r * 0.62, r * 0.36)),
+      Text(T({ text: main.u + " " + word, size: clamp(r / 9, 8, 30), color: "secondary", align: "center", lineLimit: 1 }, r * 0.62, r * 0.14))));
   const of = "of " + txt(d.total);
   if (aw >= ah * 1.7) {
     const r = clamp(ah, 40, 300), colW = Math.max(40, aw - r - 16);
     const big = fitSize("100 GB", clamp(r * 0.32, 14, 100), colW);
     const side = al.mode === "right" ? "trailing" : al.mode === "center" ? "center" : "leading";
     const info = VStack({ spacing: 3, alignment: side, width: colW },
-      Text({ text: main.n + " " + main.u, size: big, weight: "semibold", monospacedDigit: true, align: side, lineLimit: 1 }),
-      Text({ text: (free ? "free " : "used ") + of, size: fitSize("used of 500 GB", clamp(big * 0.4, 10, 36), colW), color: "secondary", align: side, lineLimit: 1 }));
+      Text(T({ text: main.n + " " + main.u, size: big, weight: "semibold", monospacedDigit: true, align: side, lineLimit: 1 }, colW, hts(ah, 3, 0.65, 0.35)[0])),
+      Text(T({ text: (free ? "free " : "used ") + of, size: fitSize("used of 500 GB", clamp(big * 0.4, 10, 36), colW), color: "secondary", align: side, lineLimit: 1 }, colW, hts(ah, 3, 0.65, 0.35)[1])));
     const kids = al.mode === "right" ? [info, mk(r)] : [mk(r), info];
     return HStack({ spacing: 16, alignment: "center", padding: PAD, width: w, height: h }, ...kids);
   }
   const lab = ah >= 110;
   const r = clamp(Math.min(aw, ah - (lab ? 24 : 0)), 36, 300);
   return page(w, h, al.v, 6, mk(r),
-    lab ? Text({ text: of, size: fitSize(of, clamp(r * 0.1, 11, 22), aw), color: "secondary", align: al.v, lineLimit: 1 }) : null);
+    lab ? Text(T({ text: of, size: fitSize(of, clamp(r * 0.1, 11, 22), aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, Math.max(14, ah - r - 12))) : null);
 }
 
 function barView(d, al, w, h, c) {
@@ -73,10 +78,10 @@ function barView(d, al, w, h, c) {
   const head = split(al, 6 * f,
     HStack({ spacing: 5 * f }, Image({ systemName: "internaldrive", size: 16 * f, color: c }),
       Text({ text: "Storage", size: 14 * f, color: "secondary", lineLimit: 1 })),
-    Text({ text: Math.round(d.fill * 100) + "%", size: 22 * f, weight: "semibold", monospacedDigit: true, lineLimit: 1 }));
+    Text(T({ text: Math.round(d.fill * 100) + "%", size: 22 * f, weight: "semibold", monospacedDigit: true, align: "trailing", lineLimit: 1 }, aw * 0.4, ah * 0.32)));
   const foot = split(al, 8 * f,
-    Text({ text: txt(d.used) + " used", size: 12 * f, monospacedDigit: true, lineLimit: 1 }),
-    Text({ text: txt(d.free) + " free", size: 12 * f, color: "secondary", monospacedDigit: true, lineLimit: 1 }));
+    Text(T({ text: txt(d.used) + " used", size: 12 * f, monospacedDigit: true, align: "leading", lineLimit: 1 }, aw * 0.46, ah * 0.16)),
+    Text(T({ text: txt(d.free) + " free", size: 12 * f, color: "secondary", monospacedDigit: true, align: "trailing", lineLimit: 1 }, aw * 0.46, ah * 0.16)));
   return page(w, h, al.lead, 7 * f, head, LinearBar({ value: d.fill, color: c, height: 8 * f }), foot);
 }
 
@@ -90,7 +95,7 @@ function detailView(d, al, w, h, c) {
     hrow(al.lead, 5 * f, Image({ systemName: "internaldrive", size: 15 * f, color: c }), Text({ text: "Storage", size: 14 * f, weight: "semibold", lineLimit: 1 })),
     kv("Used", txt(d.used), "primary"), kv("Free", txt(d.free), "primary"), kv("Total", txt(d.total), "secondary"));
   const mk = (r) => Ring({ value: d.fill, color: c, size: r },
-    Text({ text: Math.round(d.fill * 100) + "%", size: r / 4, weight: "semibold", monospacedDigit: true, lineLimit: 1 }));
+    Text(T({ text: Math.round(d.fill * 100) + "%", size: r / 4, weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }, r * 0.62, r * 0.3)));
   if (wide) {
     const r = clamp(ah, 40, 300), colW = Math.max(60, aw - r - 20);
     const kids = al.mode === "right" ? [rows(colW), mk(r)] : [mk(r), rows(colW)];
@@ -104,14 +109,15 @@ export default defineWidget({
   sources: { disk: system("disk", { interval: 30 }) },
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const raw = ctx.data ? ctx.data.disk : null;
     if (!raw || !num(raw.total) || raw.total <= 0 || !num(raw.free)) {
       const aw = w - PAD * 2, ah = h - PAD * 2, f = clamp(Math.min(aw / 150, ah / 70), 0.8, 3);
       return page(w, h, al.v, 4 * f, Image({ systemName: "internaldrive", size: 28 * f, color: "secondary" }),
-        Text({ text: "Storage", size: 15 * f, weight: "semibold", align: al.v, lineLimit: 1 }),
-        Text({ text: "Reading disk…", size: fitSize("Reading disk…", 11 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }));
+        Text(T({ text: "Storage", size: 15 * f, weight: "semibold", align: al.v, lineLimit: 1 }, aw, ah * 0.25)),
+        Text(T({ text: "Reading disk…", size: fitSize("Reading disk…", 11 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, ah * 0.15)));
     }
     const free = clamp(raw.free, 0, raw.total);
     const d = { total: raw.total, free, used: raw.total - free, fill: clamp01(1 - free / raw.total) };

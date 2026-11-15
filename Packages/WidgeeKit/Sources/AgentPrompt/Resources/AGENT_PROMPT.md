@@ -67,7 +67,9 @@ The widgets folder (absolute path):
 ## 6. Layout and theme
 
 - Adapt to `ctx.size.sizeClass` (`"small"`, `"medium"`, `"large"`, `"extraLarge"`) and `ctx.size.width` / `ctx.size.height` (points): show less on small, more on large. Declare in `sizes` only the sizes the widget supports well.
-- Use `ctx.theme`: `color: "accent"` / `"primary"` / `"secondary"` instead of hardcoded colors where possible; the font follows `ctx.theme.fontDesign`; `ctx.theme.isDark` tells the appearance; use `ctx.theme.cornerRadius` for rounded shapes. The widget background is drawn by the app, do not paint it.
+- Use `ctx.theme`: `color: "accent"` / `"primary"` / `"secondary"` instead of hardcoded colors where possible; the font follows `ctx.theme.fontDesign` (standard/rounded/monospaced/serif) or the user-chosen `ctx.theme.fontFamily` (optional string; the renderer applies it, do not set fonts yourself); `ctx.theme.isDark` tells the appearance; use `ctx.theme.cornerRadius` for rounded shapes. The widget background is drawn by the app, do not paint it.
+- Text size: in Auto (`ctx.theme.textScale` is null/absent) give `Text`/`DigitalClock` a box (`width` + `height`) and `fit: true` so the host picks the largest font size that fits. When `ctx.theme.textScale != null` the host multiplies all sizes itself and ignores `fit`: do NOT multiply sizes yourself.
+- `ctx.theme.fontWeight`, when set, is applied by the host to all text; widgets do not have to do anything.
 - Respect `ctx.theme.alignment` (`"auto"` | `"left"` | `"center"` | `"right"`): `auto` means your own layout; for `left`/`center`/`right` you MUST align the content (stack `alignment`, `Text` `align`, block positioning) accordingly.
 - Keep a padding of about 12-16 around the content.
 

@@ -131,6 +131,10 @@ function alignInfo(ctx) {
   return { mode, v, left: mode === "left", right: mode === "right", centered: mode === "center" || mode === "auto" };
 }
 
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+
 const STYLES = ["default", "compact", "hourly", "forecast", "big"];
 const fc = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
@@ -153,30 +157,35 @@ function frame(c, ...children) {
 function compactView(c) {
   const t = fc(Math.min(c.ah * (c.ah >= 130 ? 0.34 : 0.42), c.aw / 3.3), 16, 120);
   const cs = fc(t * 0.38, 11, 30);
+  const desc = c.ah >= 130;
+  const av = c.ah - 4 * (desc ? 2 : 1), cb = av * (desc ? 0.24 : 0.3), tb = av * (desc ? 0.52 : 0.7), db = av * 0.24;
+  const isz = AUTO ? tb * 0.9 : t * 0.9;
   return frame(c, Spacer(),
-    Text({ text: c.city.name, size: cs, weight: "semibold", color: WHITE, align: c.cv, lineLimit: 1 }),
+    Text(T({ text: c.city.name, size: cs, weight: "semibold", color: WHITE, align: c.cv, lineLimit: 1 }, c.aw, cb)),
     flow(c, t * 0.18,
-      Image({ systemName: c.info.symbol, size: t * 0.9, color: symbolColor(c.info.symbol) }),
-      Text({ text: c.temp, size: t, weight: "light", color: WHITE, lineLimit: 1 })),
-    c.ah >= 130 ? Text({ text: c.info.text, size: cs * 0.9, color: SOFT, align: c.cv, lineLimit: 1 }) : null,
+      Image({ systemName: c.info.symbol, size: isz, color: symbolColor(c.info.symbol) }),
+      Text(T({ text: c.temp, size: t, weight: "light", color: WHITE, align: "center", lineLimit: 1 }, Math.max(20, c.aw - isz - t * 0.18), tb))),
+    desc ? Text(T({ text: c.info.text, size: cs * 0.9, color: SOFT, align: c.cv, lineLimit: 1 }, c.aw, db)) : null,
     Spacer());
 }
 
 function bigView(c) {
   const t = fc(Math.min(c.aw / 2.8, c.ah * (c.ah >= 120 ? 0.6 : 0.85)), 24, 320);
   const cs = fc(t * 0.16, 11, 28);
+  const full = c.ah >= 120;
+  const bv = c.ah - 4 * (full ? 2 : 0), bc = bv * 0.2, bt = full ? bv * 0.6 : bv;
   return frame(c, Spacer(),
-    c.ah >= 120 ? Text({ text: c.city.name, size: cs, weight: "semibold", color: WHITE, align: c.cv, lineLimit: 1 }) : null,
-    Text({ text: c.temp, size: t, weight: "thin", color: WHITE, align: c.cv, lineLimit: 1 }),
-    c.ah >= 120 ? Text({ text: c.info.text, size: cs, color: SOFT, align: c.cv, lineLimit: 1 }) : null,
+    full ? Text(T({ text: c.city.name, size: cs, weight: "semibold", color: WHITE, align: c.cv, lineLimit: 1 }, c.aw, bc)) : null,
+    Text(T({ text: c.temp, size: t, weight: "thin", color: WHITE, align: c.cv, lineLimit: 1 }, c.aw, bt)),
+    full ? Text(T({ text: c.info.text, size: cs, color: SOFT, align: c.cv, lineLimit: 1 }, c.aw, bc)) : null,
     staleNode(c, 11), Spacer());
 }
 
 function headerRow(c, size) {
   return flow(c, 8,
     Image({ systemName: c.info.symbol, size: size * 1.1, color: symbolColor(c.info.symbol) }),
-    Text({ text: c.city.name, size: size * 0.55, weight: "semibold", color: WHITE, lineLimit: 1 }),
-    Text({ text: c.temp, size, weight: "light", color: WHITE, lineLimit: 1 }));
+    Text(T({ text: c.city.name, size: size * 0.55, weight: "semibold", color: WHITE, align: "center", lineLimit: 1 }, c.aw * 0.4, size * 0.9)),
+    Text(T({ text: c.temp, size, weight: "light", color: WHITE, align: "center", lineLimit: 1 }, c.aw * 0.3, size * 1.2)));
 }
 
 function hourlyView(c) {
@@ -215,6 +224,7 @@ export default defineWidget({
   render(ctx) {
     const sc = ctx.size.sizeClass;
     const s = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const city = validCity(s.city);
     const res = ctx.data && ctx.data.w;
     const v = res && res.value && typeof res.value === "object" ? res.value : null;
@@ -245,9 +255,12 @@ export default defineWidget({
     const tall = !wide && ah >= 260 && aw >= 230;
     const tsize = wide ? Math.min(46 * f, ah * 0.36) : Math.min(46 * f, ah * (tall ? 0.18 : 0.34));
     const iconNode = wide ? null : Image({ systemName: info.symbol, size: Math.min(30 * f, ah * (tall ? 0.14 : 0.26)), color: symbolColor(info.symbol) });
+    const isz = wide ? 0 : Math.min(30 * f, ah * (tall ? 0.14 : 0.26));
+    const tw = wide ? aw * 0.38 : al.mode === "center" ? aw : Math.max(40, aw - isz - 16);
+    const th = wide ? ah * 0.42 : ah * (tall ? 0.2 : small ? 0.5 : 0.34);
     const titleNode = VStack({ spacing: 0, alignment: sv },
-      Text({ text: city.name, size: (aw < 160 ? 12 : 14) * f, weight: "semibold", color: WHITE, align: sv, lineLimit: 1 }),
-      Text({ text: temp, size: tsize, weight: "light", color: WHITE, align: sv, lineLimit: 1 }));
+      Text(T({ text: city.name, size: (aw < 160 ? 12 : 14) * f, weight: "semibold", color: WHITE, align: sv, lineLimit: 1 }, tw, th * 0.3)),
+      Text(T({ text: temp, size: tsize, weight: "light", color: WHITE, align: sv, lineLimit: 1 }, tw, th * 0.7)));
     // auto/left: название слева, иконка справа; right: зеркально; center: колонкой по центру.
     let header;
     if (al.mode === "center") {
@@ -263,10 +276,10 @@ export default defineWidget({
       const cond = [Image({ systemName: info.symbol, size: 18 * f, color: symbolColor(info.symbol) }),
         Text({ text: info.text, size: 14 * f, weight: "medium", color: WHITE, lineLimit: 1 })];
       rows.push(HStack({ spacing: 6 }, ...(al.right ? cond.reverse() : cond)));
-      rows.push(Text({ text: hiLo, size: 13 * f, color: SOFT, align: sv, lineLimit: 1 }));
+      rows.push(Text(T({ text: hiLo, size: 13 * f, color: SOFT, align: sv, lineLimit: 1 }, aw * 0.38, ah * 0.1)));
     } else if (!small) {
-      rows.push(Text({ text: info.text, size: 14 * f, weight: "medium", color: WHITE, align: sv, lineLimit: 1 }));
-      rows.push(Text({ text: hiLo, size: 13 * f, color: SOFT, align: sv, lineLimit: 1 }));
+      rows.push(Text(T({ text: info.text, size: 14 * f, weight: "medium", color: WHITE, align: sv, lineLimit: 1 }, aw, ah * 0.1)));
+      rows.push(Text(T({ text: hiLo, size: 13 * f, color: SOFT, align: sv, lineLimit: 1 }, aw, ah * 0.08)));
     }
     let right = null;
     if (wide) {

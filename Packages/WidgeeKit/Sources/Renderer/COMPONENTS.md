@@ -15,7 +15,7 @@
 
 ## Цвета
 `"accent"` (Theme.accentHex), `"primary"`, `"secondary"` или `"#RGB"`/`"#RRGGBB"`/`"#RRGGBBAA"`.
-Неверное значение -> дефолт компонента. Шрифт всегда берётся из `Theme.fontDesign`.
+Неверное значение -> дефолт компонента. Шрифт всегда берётся из темы: `Theme.fontFamily` (установленное семейство; если его нет, запасной вариант) или, когда оно не задано, `Theme.fontDesign` (standard, rounded, monospaced, serif).
 Дефолтные размеры умножаются на коэффициент SizeClass (small 0.9, medium 1, large 1.15, extraLarge 1.3).
 Веса: ultraLight, thin, light, regular, medium, semibold, bold, heavy, black.
 
@@ -34,7 +34,10 @@ Props: `minLength` (number, системный).
 
 ## Text
 Props: `text` (string, ""), `size` (number, 14), `weight` (string, regular), `color` (primary),
-`align` (leading|center|trailing, leading), `lineLimit` (int 1...50, без лимита), `monospacedDigit` (bool, false).
+`align` (leading|center|trailing, leading), `lineLimit` (int 1...50, без лимита), `monospacedDigit` (bool, false),
+`fit` (bool, false: «максимальный кегль, который влезает»). Правила `fit`: действует только при заданных `width` и `height` (pt — «коробка» текста) и `Theme.textScale == nil` (Auto); текст в одну строку, кегль = наибольший, при котором строка помещается в коробку (верхняя граница height/1.2, дальше `minimumScaleFactor` ≈ 0.02), выравнивание в коробке по `align`; `size` игнорируется. Без `width`/`height` или при ручном `Theme.textScale` — обычный текст. При `textScale != nil` хост умножает любой размер на textScale (0.25...4).
+
+Вес текста: если задан `Theme.fontWeight` (ultraLight...black), он переопределяет `weight` у любого `Text` и `DigitalClock` (включая `monospaced`); для установленных шрифтов берётся ближайшее существующее начертание. nil/неизвестное значение = Auto (собственные веса). `Image`/SF Symbols не затрагиваются.
 ```json
 {"type":"Text","props":{"text":"78 %","size":32,"weight":"semibold","color":"accent"}}
 ```
@@ -92,7 +95,7 @@ Props: `values` (number[]), `labels` (string[], подписи оси X), `color
 ## DigitalClock
 Props: `timeZone` (IANA id или аббревиатура, системный пояс), `hour12` (bool, false), `showSeconds` (bool, false),
 `size` (32), `weight` (medium), `color` (primary), `part` ("all"|"hour"|"minute", all: показать только часы или минуты),
-`monospaced` (bool, false: моноширинный шрифт). Обновляется раз в секунду.
+`monospaced` (bool, false: моноширинный шрифт), `fit` (bool, false) + `width` + `height`: часы вписываются в коробку так же, как Text.fit (`size` игнорируется; `align` leading|center|trailing, по умолчанию center). Обновляется раз в секунду.
 ```json
 {"type":"DigitalClock","props":{"timeZone":"Europe/Moscow","hour12":false,"showSeconds":true}}
 ```

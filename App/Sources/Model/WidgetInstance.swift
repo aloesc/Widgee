@@ -82,6 +82,12 @@ struct WidgetInstance: Codable, Identifiable, Equatable, Sendable {
     var textAppearance: TextAppearance?
     /// Выравнивание содержимого внутри виджета; nil = Auto (собственная раскладка виджета).
     var alignment: ContentAlignment?
+    /// Имя семейства установленного шрифта; nil = по `fontDesign` (старые config.json читаются без поля).
+    var fontFamily: String?
+    /// Множитель размера текста; nil = Auto (максимальный кегль, который влезает). Старые config.json читаются без поля.
+    var textScale: Double?
+    /// Вес текста (ultraLight...black); nil = Auto. Старые config.json читаются без поля.
+    var fontWeight: String?
 
     var size: CGSize { CGSize(width: width, height: height) }
 

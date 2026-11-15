@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -50,9 +55,10 @@ function numbers(m, al, w, h, cd, cu) {
   const aw = w - PAD * 2, ah = h - PAD * 2;
   const wide = aw >= ah * 1.8;
   const f = wide ? clamp(Math.min(aw / 250, ah / 70), 0.8, 3) : clamp(Math.min(aw / 140, ah / 120), 0.7, 3);
+  const bw = wide ? aw / 2 - 12 * f : aw, vh = wide ? (ah - 24 * f) * 0.9 : Math.max(14, (ah - 10 * f - 2 * (20 * f + 2 * f)) / 2 * 0.95), vw = Math.max(30, bw - 54 * f);
   const block = (label, icon, s, c) => VStack({ spacing: 2 * f, alignment: al.lead },
     hrow(al.lead, 4 * f, Image({ systemName: icon, size: 13 * f, color: c }), Text({ text: label, size: 12 * f, color: "secondary", lineLimit: 1 })),
-    hrow(al.lead, 4 * f, Text({ text: s.v, size: 28 * f, weight: "semibold", monospacedDigit: true, lineLimit: 1 }),
+    hrow(al.lead, 4 * f, Text(T({ text: s.v, size: 28 * f, weight: "semibold", monospacedDigit: true, align: "leading", lineLimit: 1 }, vw, vh)),
       Text({ text: s.u, size: 12 * f, color: "secondary", lineLimit: 1 })));
   const a = block("Download", "arrow.down", m.down, cd), b = block("Upload", "arrow.up", m.up, cu);
   if (wide) return HStack({ spacing: 24 * f, alignment: "center", padding: PAD, width: w, height: h },
@@ -67,7 +73,7 @@ function graphs(m, al, w, h, cd, cu) {
   const series = (label, icon, s, vals, c) => VStack({ spacing: 3 * f, alignment: al.lead },
     split(al, 6 * f,
       HStack({ spacing: 4 * f }, Image({ systemName: icon, size: 12 * f, color: c }), Text({ text: label, size: 12 * f, color: "secondary", lineLimit: 1 })),
-      Text({ text: s.v + " " + s.u, size: 13 * f, weight: "semibold", monospacedDigit: true, lineLimit: 1 })),
+      Text(T({ text: s.v + " " + s.u, size: 13 * f, weight: "semibold", monospacedDigit: true, align: "trailing", lineLimit: 1 }, aw * 0.45, 20 * f))),
     Sparkline({ values: vals.length > 1 ? vals.slice() : [0, 0], color: c, height: gh, fill: true }));
   return page(w, h, al.lead, 8 * f, series("Download", "arrow.down", m.down, hist.down, cd), series("Upload", "arrow.up", m.up, hist.up, cu));
 }
@@ -76,6 +82,7 @@ export default defineWidget({
   sources: { network: system("network", { interval: 2 }) },
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const n = ctx.data ? ctx.data.network : null;

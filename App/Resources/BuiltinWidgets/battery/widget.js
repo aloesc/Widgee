@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -59,8 +64,8 @@ function noBattery(al, w, h) {
   const f = clamp(Math.min(aw / 150, ah / 80), 0.8, 3);
   return page(w, h, al.v, 4 * f,
     Image({ systemName: "desktopcomputer", size: 30 * f, color: "secondary" }),
-    Text({ text: "No battery", size: fitSize("No battery", 16 * f, aw), weight: "semibold", align: al.v, lineLimit: 1 }),
-    Text({ text: "Running on AC power", size: fitSize("Running on AC power", 11 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }));
+    Text(T({ text: "No battery", size: fitSize("No battery", 16 * f, aw), weight: "semibold", align: al.v, lineLimit: 1 }, aw, ah * 0.25)),
+    Text(T({ text: "Running on AC power", size: fitSize("Running on AC power", 11 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, ah * 0.15)));
 }
 
 function ringView(b, al, w, h, c) {
@@ -70,15 +75,15 @@ function ringView(b, al, w, h, c) {
   const mk = (r) => Ring({ value: clamp01(b.level), color: c, size: r },
     VStack({ spacing: 0, alignment: "center" },
       r >= 90 && b.isCharging ? Image({ systemName: "bolt.fill", size: r * 0.14, color: c }) : null,
-      Text({ text: pct, size: r / 3.8, weight: "semibold", monospacedDigit: true, lineLimit: 1 })));
+      Text(T({ text: pct, size: r / 3.8, weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }, r * 0.62, r * 0.36))));
   if (aw >= ah * 1.7) {
     const r = clamp(ah, 40, 300), colW = Math.max(40, aw - r - 16);
     const big = fitSize("100%", clamp(r * 0.4, 14, 120), colW);
     const small = fitSize("Fully charged", clamp(big * 0.4, 10, 40), colW);
     const side = al.mode === "right" ? "trailing" : al.mode === "center" ? "center" : "leading";
     const info = VStack({ spacing: 3, alignment: side, width: colW },
-      Text({ text: pct, size: big, weight: "semibold", monospacedDigit: true, align: side, lineLimit: 1 }),
-      Text({ text: status, size: small, color: "secondary", align: side, lineLimit: 1 }));
+      Text(T({ text: pct, size: big, weight: "semibold", monospacedDigit: true, align: side, lineLimit: 1 }, colW, hts(ah, 3, 0.65, 0.35)[0])),
+      Text(T({ text: status, size: small, color: "secondary", align: side, lineLimit: 1 }, colW, hts(ah, 3, 0.65, 0.35)[1])));
     const kids = al.mode === "right" ? [info, mk(r)] : [mk(r), info];
     return HStack({ spacing: 16, alignment: "center", padding: PAD, width: w, height: h }, ...kids);
   }
@@ -86,7 +91,7 @@ function ringView(b, al, w, h, c) {
   const lh = lab ? clamp(ah * 0.12, 13, 26) * 1.4 + 6 : 0;
   const r = clamp(Math.min(aw, ah - lh), 36, 300);
   return page(w, h, al.v, 6, mk(r),
-    lab ? Text({ text: status, size: fitSize(status, clamp(r * 0.11, 11, 24), aw), color: "secondary", align: al.v, lineLimit: 1 }) : null);
+    lab ? Text(T({ text: status, size: fitSize(status, clamp(r * 0.11, 11, 24), aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, Math.max(14, ah - r - 12))) : null);
 }
 
 function barView(b, al, w, h, c) {
@@ -95,9 +100,9 @@ function barView(b, al, w, h, c) {
   const head = split(al, 6 * f,
     HStack({ spacing: 5 * f }, Image({ systemName: iconFor(b), size: 16 * f, color: c }),
       Text({ text: "Battery", size: 14 * f, color: "secondary", lineLimit: 1 })),
-    Text({ text: Math.round(b.level * 100) + "%", size: 22 * f, weight: "semibold", monospacedDigit: true, lineLimit: 1 }));
+    Text(T({ text: Math.round(b.level * 100) + "%", size: 22 * f, weight: "semibold", monospacedDigit: true, align: "trailing", lineLimit: 1 }, aw * 0.4, ah * 0.32)));
   return page(w, h, al.lead, 7 * f, head, LinearBar({ value: clamp01(b.level), color: c, height: 8 * f }),
-    Text({ text: statusText(b), size: fitSize(statusText(b), 12 * f, aw), color: "secondary", align: al.lead, lineLimit: 1 }));
+    Text(T({ text: statusText(b), size: fitSize(statusText(b), 12 * f, aw), color: "secondary", align: al.lead, lineLimit: 1 }, aw, ah * 0.18)));
 }
 
 function statusView(b, al, w, h, c) {
@@ -106,16 +111,17 @@ function statusView(b, al, w, h, c) {
   const st = statusText(b), dt = detailText(b);
   return page(w, h, al.v, 6 * f,
     hrow(al.v, 8 * f, Image({ systemName: iconFor(b), size: 30 * f, color: c }),
-      Text({ text: Math.round(b.level * 100) + "%", size: 40 * f, weight: "semibold", monospacedDigit: true, lineLimit: 1 })),
+      Text(T({ text: Math.round(b.level * 100) + "%", size: 40 * f, weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }, Math.max(30, aw * 0.6), ah * 0.3))),
     LinearBar({ value: clamp01(b.level), color: c, height: 10 * f }),
-    Text({ text: st, size: fitSize(st, 15 * f, aw), weight: "medium", align: al.v, lineLimit: 1 }),
-    Text({ text: dt, size: fitSize(dt, 11 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }));
+    Text(T({ text: st, size: fitSize(st, 15 * f, aw), weight: "medium", align: al.v, lineLimit: 1 }, aw, ah * 0.14)),
+    Text(T({ text: dt, size: fitSize(dt, 11 * f, aw), color: "secondary", align: al.v, lineLimit: 1 }, aw, ah * 0.1)));
 }
 
 export default defineWidget({
   sources: { battery: system("battery", { interval: 30 }) },
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const raw = ctx.data ? ctx.data.battery : null;

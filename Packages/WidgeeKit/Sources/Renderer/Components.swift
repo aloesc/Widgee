@@ -165,11 +165,21 @@ struct DigitalClockView: View {
         let weight = parseWeight(p.string("weight") ?? "medium")
         let part = p.string("part") ?? "all"
         let mono = p.bool("monospaced") ?? false
+        let box = ctx.fitBox(p)
+        let eff = box.map { $0.height / 1.2 } ?? size
+        let m = ctx.textMultiplier
         TimelineView(.periodic(from: .now, by: 1)) { tl in
-            Text(DigitalClockView.format(tl.date, timeZone: tz, hour12: h12, seconds: secs, part: part))
-                .font(mono ? .system(size: size, weight: weight, design: .monospaced) : ctx.font(size: size, weight: weight))
+            let t = Text(DigitalClockView.format(tl.date, timeZone: tz, hour12: h12, seconds: secs, part: part))
+                .font(mono ? .system(size: eff * m, weight: ctx.weightOverride ?? weight, design: .monospaced) : ctx.font(size: eff, weight: weight))
                 .monospacedDigit()
+                .lineLimit(1)
                 .foregroundStyle(color)
+            if let box {
+                t.minimumScaleFactor(0.02)
+                    .frame(width: box.width, height: box.height, alignment: fitAlignment(p.string("align"), default: .center))
+            } else {
+                t.minimumScaleFactor(0.3)  // широкий шрифт сжимается до ширины блока, а не обрезается «…»
+            }
         }
     }
 

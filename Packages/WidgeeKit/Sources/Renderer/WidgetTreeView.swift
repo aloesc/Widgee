@@ -88,15 +88,34 @@ struct NodeView: View {
     }
 
     @ViewBuilder private func textView(_ p: Props) -> some View {
+        if let box = ctx.fitBox(p) {
+            let size = box.height / 1.2
+            let ft = Text(p.string("text") ?? "")
+                .font(ctx.font(size: size, weight: parseWeight(p.string("weight"))))
+                .foregroundStyle(ctx.color(p.string("color")))
+            let f = Group {
+                if p.bool("monospacedDigit") ?? false { ft.monospacedDigit() } else { ft }
+            }
+            f.lineLimit(1).minimumScaleFactor(0.02)
+                .frame(width: box.width, height: box.height, alignment: fitAlignment(p.string("align")))
+        } else {
+            plainText(p)
+        }
+    }
+
+    @ViewBuilder private func plainText(_ p: Props) -> some View {
         let size = p.length("size") ?? 14 * ctx.scale
         let t = Text(p.string("text") ?? "")
             .font(ctx.font(size: size, weight: parseWeight(p.string("weight"))))
             .foregroundStyle(ctx.color(p.string("color")))
             .multilineTextAlignment(textAlign(p.string("align")))
+        // Однострочный текст сжимается, чтобы поместиться (широкие шрифты вроде Nerd Font), а не обрезается «…».
+        let limit = p.int("lineLimit", in: 1...50)
+        let scale: CGFloat = limit == 1 ? (p.double("minScale").map { CGFloat(min(1, max(0.2, $0))) } ?? 0.4) : 1
         if p.bool("monospacedDigit") ?? false {
-            t.monospacedDigit().lineLimit(p.int("lineLimit", in: 1...50))
+            t.monospacedDigit().lineLimit(limit).minimumScaleFactor(scale)
         } else {
-            t.lineLimit(p.int("lineLimit", in: 1...50))
+            t.lineLimit(limit).minimumScaleFactor(scale)
         }
     }
 
@@ -120,6 +139,9 @@ struct CommonProps: ViewModifier {
     }
 }
 
+func fitAlignment(_ s: String?, default d: Alignment = .leading) -> Alignment {
+    switch s { case "center": .center; case "trailing": .trailing; case "leading": .leading; default: d }
+}
 private func hAlign(_ s: String?) -> HorizontalAlignment {
     switch s { case "center": .center; case "trailing": .trailing; default: .leading }
 }

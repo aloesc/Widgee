@@ -31,12 +31,19 @@ function alignInfo(ctx) {
   return { mode, v, left: mode === "left", right: mode === "right", centered: mode === "center" || mode === "auto" };
 }
 
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Доли высоты n элементов стека (время крупнее подписей).
+const SHARES = { 1: [1], 2: [0.62, 0.38], 3: [0.55, 0.28, 0.17] };
+
 const STYLES = ["digital", "analog", "bold", "stacked", "minimal", "mono", "analog-minimal", "analog-dots", "analog-seconds"];
 
 export default defineWidget({
   sources: { now: timer(30) },
   render(ctx) {
     const s = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const style = STYLES.indexOf(s.style) >= 0 ? s.style : "digital";
     const isAnalog = style.indexOf("analog") === 0;
     // Параметры циферблата для аналоговых вариантов (по умолчанию — текущий вид).
@@ -67,10 +74,14 @@ export default defineWidget({
         const textW = aw - face - 20;
         const big = fit(Math.min(face * 0.2, textW / 7));
         const face_ = AnalogClock({ timeZone: tz, hour12: true, showSeconds, size: face, ...face0 });
-        const info = VStack({ spacing: Math.max(2, big * 0.15), alignment: al.right ? "trailing" : "leading", width: textW },
-          Text({ text: parts[0], size: big, weight: "semibold", color: "accent", align: al.right ? "trailing" : "leading", lineLimit: 1 }),
-          Text({ text: parts[1], size: big * 0.8, align: al.right ? "trailing" : "leading", lineLimit: 1 }),
-          tz ? Text({ text: tz, size: Math.max(10, big * 0.45), color: "secondary", align: al.right ? "trailing" : "leading", lineLimit: 1 }) : null);
+        const asp = AUTO ? 2 : Math.max(2, big * 0.15);
+        const an = tz ? 3 : 2, ash = SHARES[an === 3 ? 3 : 2].slice();
+        if (tz) { ash[0] = 0.4; ash[1] = 0.4; ash[2] = 0.2; }
+        const aH = (i) => (ah - asp * (an - 1)) * ash[i];
+        const info = VStack({ spacing: asp, alignment: al.right ? "trailing" : "leading", width: textW },
+          Text(T({ text: parts[0], size: big, weight: "semibold", color: "accent", align: al.right ? "trailing" : "leading", lineLimit: 1 }, textW, aH(0))),
+          Text(T({ text: parts[1], size: big * 0.8, align: al.right ? "trailing" : "leading", lineLimit: 1 }, textW, aH(1))),
+          tz ? Text(T({ text: tz, size: Math.max(10, big * 0.45), color: "secondary", align: al.right ? "trailing" : "leading", lineLimit: 1 }, textW, aH(2))) : null);
         // left: циферблат у левого края, дата справа; right: зеркально; center/auto: блок по центру.
         if (al.left) return HStack({ spacing: 20, alignment: "center", padding: pad, width: w, height: h }, face_, info, Spacer());
         if (al.right) return HStack({ spacing: 20, alignment: "center", padding: pad, width: w, height: h }, Spacer(), info, face_);
@@ -78,11 +89,12 @@ export default defineWidget({
       }
       // Дата под циферблатом (если есть место по высоте).
       const dsize = fit(Math.min(aw / 14, ah / 12));
-      const withDate = !large && ah >= 200 && aw >= 150;
-      const face = Math.max(60, Math.min(large ? Math.max(aw, ah) : aw, withDate ? ah - dsize * 1.6 - 8 : ah));
+      const withDate = AUTO ? ah >= 100 : !large && ah >= 200 && aw >= 150;
+      const dh = AUTO ? Math.max(16, Math.min(ah * 0.16, 60)) : dsize * 1.6;
+      const face = AUTO && withDate ? Math.max(40, Math.min(aw, ah - dh - 16)) : Math.max(60, Math.min(large ? Math.max(aw, ah) : aw, withDate ? ah - dsize * 1.6 - 8 : ah));
       return VStack({ spacing: 8, alignment: al.v, padding: pad, width: w, height: h },
         Spacer(), AnalogClock({ timeZone: tz, hour12: true, showSeconds, size: face, ...face0 }),
-        withDate ? Text({ text: date, size: dsize, color: "secondary", align: al.v, lineLimit: 1 }) : null,
+        withDate ? Text(T({ text: date, size: dsize, color: "secondary", align: al.v, lineLimit: 1 }, aw, dh)) : null,
         Spacer());
     }
 
@@ -99,22 +111,28 @@ export default defineWidget({
       // Часы над минутами: ширина ~2 цифры, ограничение по высоте двух строк.
       const sb = Math.max(14, Math.min(aw * 0.9 / 1.3, ah * (showDate ? 0.36 : 0.45), 400));
       const ds = dsizeOf(sb * 1.4);
-      return VStack({ spacing: 0, alignment: al.v, padding: pad, width: w, height: h },
+      const ssp = AUTO ? 2 : 0, sav = ah - ssp * (showDate ? 2 : 1);
+      const sh = showDate ? [0.38, 0.38, 0.24] : [0.5, 0.5];
+      const fx = (i) => (AUTO ? { align: al.v } : {});
+      return VStack({ spacing: ssp, alignment: al.v, padding: pad, width: w, height: h },
         Spacer(),
-        DigitalClock({ timeZone: tz, hour12, part: "hour", size: sb, weight: "semibold", color: "primary" }),
-        DigitalClock({ timeZone: tz, part: "minute", size: sb, weight: "light", color: "accent" }),
-        showDate ? Text({ text: dateStr, size: ds, color: "secondary", weight: "medium", align: al.v, lineLimit: 1 }) : null,
+        DigitalClock(T({ timeZone: tz, hour12, part: "hour", size: sb, weight: "semibold", color: "primary", ...fx() }, aw, sav * sh[0])),
+        DigitalClock(T({ timeZone: tz, part: "minute", size: sb, weight: "light", color: "accent", ...fx() }, aw, sav * sh[1])),
+        showDate ? Text(T({ text: dateStr, size: ds, color: "secondary", weight: "medium", align: al.v, lineLimit: 1 }, aw, sav * sh[2])) : null,
         Spacer());
     }
     // Время: <= 90% ширины и <= ~40% высоты (с датой) или ~70% (без даты).
     let big = Math.min(aw * 0.9 / em, ah * (showDate ? 0.42 : 0.7), 400);
     big = Math.max(14, big);
     const dsize = dsizeOf(big);
-    return VStack({ spacing: Math.max(2, big * 0.06), alignment: al.v, padding: pad, width: w, height: h },
+    const nn = 1 + (showDate ? 1 : 0) + (showTz ? 1 : 0);
+    const dsp = AUTO ? 4 : Math.max(2, big * 0.06), dav = ah - dsp * (nn - 1), dsh = SHARES[nn];
+    const dfx = AUTO ? { align: al.v } : {};
+    return VStack({ spacing: dsp, alignment: al.v, padding: pad, width: w, height: h },
       Spacer(),
-      DigitalClock({ timeZone: tz, hour12, showSeconds, size: big, weight, monospaced: mono, color: "primary" }),
-      showDate ? Text({ text: dateStr, size: dsize, color: "accent", weight: bold ? "bold" : "medium", align: al.v, lineLimit: 1 }) : null,
-      showTz ? Text({ text: tz, size: Math.max(10, dsize * 0.7), color: "secondary", align: al.v, lineLimit: 1 }) : null,
+      DigitalClock(T({ timeZone: tz, hour12, showSeconds, size: big, weight, monospaced: mono, color: "primary", ...dfx }, aw, dav * dsh[0])),
+      showDate ? Text(T({ text: dateStr, size: dsize, color: "accent", weight: bold ? "bold" : "medium", align: al.v, lineLimit: 1 }, aw, dav * dsh[1])) : null,
+      showTz ? Text(T({ text: tz, size: Math.max(10, dsize * 0.7), color: "secondary", align: al.v, lineLimit: 1 }, aw, dav * dsh[2])) : null,
       Spacer());
   },
 });

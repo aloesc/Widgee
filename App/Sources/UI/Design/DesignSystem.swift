@@ -279,9 +279,13 @@ struct SliderRow<V: BinaryFloatingPoint>: View where V.Stride: BinaryFloatingPoi
     let step: V.Stride
     let format: (V) -> String
 
-    init(_ label: String, value: Binding<V>, in range: ClosedRange<V>, step: V.Stride = 1,
+    /// Без явного `step` шаг зависит от диапазона: для коротких (0…1) 0,01, иначе 1.
+    /// Раньше по умолчанию был 1, и ползунок 0…1 принимал только 0 и 1.
+    init(_ label: String, value: Binding<V>, in range: ClosedRange<V>, step: V.Stride? = nil,
          format: @escaping (V) -> String = { "\(Int($0)) pt" }) {
-        self.label = label; self._value = value; self.range = range; self.step = step; self.format = format
+        self.label = label; self._value = value; self.range = range
+        self.step = step ?? (range.upperBound - range.lowerBound <= 2 ? 0.01 : 1)
+        self.format = format
     }
 
     var body: some View {

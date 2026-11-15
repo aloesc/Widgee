@@ -233,6 +233,19 @@ final class DesktopWindowController {
 
     // MARK: прилипание, сетка, ресайз
 
+    /// Вызывается при начале/конце перетаскивания или ресайза виджета (панель редактирования становится click-through).
+    var onGestureChange: ((Bool) -> Void)?
+    private var gestureActive = false
+
+    private func setGesture(_ on: Bool) {
+        guard gestureActive != on else { return }
+        gestureActive = on
+        onGestureChange?(on)
+    }
+
+    /// Рамки окон виджетов (для выбора места панели редактирования).
+    var widgetFrames: [NSRect] { entries.values.map { $0.window.frame } }
+
     var debugWidgetFrames: [NSRect] { entries.values.map { $0.window.frame } }
 
     func layoutChanged() { overlay.refresh(editing: editing, layout: state.layout) }
@@ -262,6 +275,7 @@ final class DesktopWindowController {
     /// Перетаскивание: позиция корректируется движком прилипания, направляющие рисует оверлей.
     func dragMove(_ id: UUID, to origin: NSPoint, optionHeld: Bool) {
         guard let e = entries[id] else { return }
+        setGesture(true)
         defer { e.model.hud = "\(Int(e.window.frame.minX)), \(Int(e.window.frame.minY))" }
         let proposed = NSRect(origin: origin, size: e.window.frame.size)
         guard let s = screen(for: proposed) else { e.window.setFrameOrigin(origin); return }
@@ -274,6 +288,7 @@ final class DesktopWindowController {
 
     func dragEnd(_ id: UUID, optionHeld: Bool) {
         guard let e = entries[id] else { return }
+        defer { setGesture(false) }
         e.model.hud = nil
         overlay.setGuides([], on: nil)
         var f = e.window.frame
@@ -285,6 +300,7 @@ final class DesktopWindowController {
     /// Свободный ресайз: левый верхний угол на месте, содержимое перерисовывается на лету.
     func resizeMove(_ id: UUID, size: CGSize, optionHeld: Bool) {
         guard let e = entries[id] else { return }
+        setGesture(true)
         defer {
             let sz = e.window.frame.size
             e.model.hud = "\(Int(sz.width))×\(Int(sz.height)) pt · \(WidgetSizePreset.nearest(to: sz).cellLabel) cells"
@@ -316,6 +332,7 @@ final class DesktopWindowController {
 
     func resizeEnd(_ id: UUID) {
         guard let e = entries[id] else { return }
+        defer { setGesture(false) }
         e.model.hud = nil
         overlay.setGuides([], on: nil)
         commit(id, e.window.frame)

@@ -70,11 +70,35 @@ struct RenderContext {
         case .standard: .default
         case .rounded: .rounded
         case .monospaced: .monospaced
+        case .serif: .serif
         }
     }
 
-    func font(size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .system(size: size, weight: weight, design: design)
+    /// Единая точка выбора шрифта: `theme.fontFamily` (если установлен) иначе системный шрифт с `fontDesign`.
+    /// Множитель размера текста (1 в Auto), клэмп 0.25...4.
+    var textMultiplier: CGFloat {
+        guard let s = theme.textScale, s.isFinite else { return 1 }
+        return CGFloat(min(max(s, 0.25), 4))
+    }
+
+    /// Коробка для `fit`: только в Auto (textScale == nil) и при заданных width и height.
+    func fitBox(_ p: Props) -> CGSize? {
+        guard p.bool("fit") ?? false, theme.textScale == nil,
+              let w = p.length("width"), let h = p.length("height"), w > 0, h > 0 else { return nil }
+        return CGSize(width: w, height: h)
+    }
+
+    /// Вес, заданный пользователем (`theme.fontWeight`); nil = Auto.
+    var weightOverride: Font.Weight? { parseWeightStrict(theme.fontWeight) }
+
+    func font(size rawSize: CGFloat, weight ownWeight: Font.Weight = .regular) -> Font {
+        let weight = weightOverride ?? ownWeight
+        let size = rawSize * textMultiplier
+        if let family = theme.fontFamily, !family.isEmpty,
+           let name = FontResolver.postScriptName(family: family, weight: weight) {
+            return .custom(name, fixedSize: size)
+        }
+        return .system(size: size, weight: weight, design: design)
     }
 }
 
@@ -89,5 +113,21 @@ func parseWeight(_ name: String?) -> Font.Weight {
     case "heavy": .heavy
     case "black": .black
     default: .regular
+    }
+}
+
+/// Как `parseWeight`, но неизвестное/пустое значение даёт nil (Auto).
+func parseWeightStrict(_ name: String?) -> Font.Weight? {
+    switch name?.lowercased() {
+    case "ultralight": .ultraLight
+    case "thin": .thin
+    case "light": .light
+    case "regular": .regular
+    case "medium": .medium
+    case "semibold": .semibold
+    case "bold": .bold
+    case "heavy": .heavy
+    case "black": .black
+    default: nil
     }
 }

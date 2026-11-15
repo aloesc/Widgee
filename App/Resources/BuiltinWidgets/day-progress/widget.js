@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -55,10 +60,11 @@ function barsView(list, al, w, h) {
   const aw = w - PAD * 2, ah = h - PAD * 2;
   const n = list.length;
   const f = clamp(Math.min(aw / 200, ah / (n * 36)), 0.8, 2.6);
+  const lh = Math.max(10, (ah - 11 * f * (n - 1)) / n - 11 * f);
   const rows = list.map((it) => VStack({ spacing: 4 * f, alignment: al.lead },
     split(al, 6 * f,
-      Text({ text: it.label, size: 13 * f, color: "secondary", lineLimit: 1 }),
-      Text({ text: pct(it.value), size: 14 * f, weight: "semibold", monospacedDigit: true, lineLimit: 1 })),
+      Text(T({ text: it.label, size: 13 * f, color: "secondary", align: "leading", lineLimit: 1 }, aw * 0.55, lh)),
+      Text(T({ text: pct(it.value), size: 14 * f, weight: "semibold", monospacedDigit: true, align: "trailing", lineLimit: 1 }, aw * 0.35, lh))),
     LinearBar({ value: clamp01(it.value), color: it.color, height: 7 * f })));
   return page(w, h, al.lead, 11 * f, ...rows);
 }
@@ -75,8 +81,8 @@ function ringsView(list, al, w, h) {
   const size = clamp(best.size, 30, 300);
   const cell = (it) => VStack({ spacing: 4, alignment: "center", width: size },
     Ring({ value: clamp01(it.value), color: it.color, size },
-      Text({ text: pct(it.value), size: size / 4, weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 })),
-    Text({ text: it.label, size: fitSize(it.label, clamp(size * 0.15, 10, 24), size + 8), color: "secondary", align: "center", lineLimit: 1 }));
+      Text(T({ text: pct(it.value), size: size / 4, weight: "semibold", monospacedDigit: true, align: "center", lineLimit: 1 }, size * 0.62, size * 0.3))),
+    Text(T({ text: it.label, size: fitSize(it.label, clamp(size * 0.15, 10, 24), size + 8), color: "secondary", align: "center", lineLimit: 1 }, size + 8, 20)));
   const grid = [];
   for (let r = 0; r < best.r; r++) grid.push(hrow(al.v, gap, ...list.slice(r * best.c, (r + 1) * best.c).map(cell)));
   return page(w, h, al.v, gap, ...grid);
@@ -86,6 +92,7 @@ export default defineWidget({
   sources: { now: timer(60) },
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const t = ctx.data && ctx.data.now && num(ctx.data.now.now) ? ctx.data.now.now : Date.now();
     const list = items(new Date(t), st);

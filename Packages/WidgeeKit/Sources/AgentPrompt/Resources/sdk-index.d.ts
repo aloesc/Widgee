@@ -31,6 +31,8 @@ declare module "widgee" {
   export interface TextProps extends CommonProps {
     text?: string; size?: number; weight?: Weight; color?: Color;
     align?: "leading" | "center" | "trailing"; lineLimit?: number; monospacedDigit?: boolean;
+    /** Auto: самый крупный кегль, который влезает в коробку width x height (обязательны оба). Игнорируется при ctx.theme.textScale != null. */
+    fit?: boolean;
   }
   export interface ImageProps extends CommonProps {
     /** Имя SF Symbol. */
@@ -58,6 +60,8 @@ declare module "widgee" {
   export interface DigitalClockProps extends CommonProps {
     timeZone?: string; hour12?: boolean; showSeconds?: boolean; size?: number; weight?: Weight; color?: Color;
     part?: "all" | "hour" | "minute"; monospaced?: boolean;
+    /** Как Text.fit: вписать в коробку width x height (size игнорируется). */
+    fit?: boolean; align?: "leading" | "center" | "trailing";
   }
   export interface AnalogClockProps extends CommonProps {
     timeZone?: string; hour12?: boolean; showSeconds?: boolean; size?: number; color?: Color; secondColor?: Color;
@@ -134,13 +138,21 @@ declare module "widgee" {
    */
   export type ContentAlignment = "auto" | "left" | "center" | "right";
 
+  export type FontWeight = "ultraLight" | "thin" | "light" | "regular" | "medium" | "semibold" | "bold" | "heavy" | "black";
+
   export interface Theme {
     cornerRadius: number;
-    fontDesign: "standard" | "rounded" | "monospaced";
+    fontDesign: "standard" | "rounded" | "monospaced" | "serif";
     accentHex: string;
     isDark: boolean;
     /** auto = собственная раскладка; left/center/right — виджет обязан выровнять содержимое. */
     alignment: ContentAlignment;
+    /** Имя семейства выбранного пользователем шрифта (напр. "Georgia"); отсутствует = шрифт по fontDesign. Рендерер сам применяет шрифт. */
+    fontFamily?: string;
+    /** Ручной множитель размера текста (0.25...4); null/отсутствует = Auto: используйте fit с коробкой. Хост сам умножает все размеры. */
+    textScale?: number | null;
+    /** Вес текста, выбранный пользователем; null/отсутствует = Auto (собственные веса). Когда задан, хост применяет его ко всему тексту: виджеты ничего делать не обязаны. */
+    fontWeight?: FontWeight | null;
   }
 
   /** Значение настройки типа "city" в manifest.settings. */

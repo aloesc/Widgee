@@ -158,6 +158,6 @@ extension WidgetInstance {
 
     func theme(isDark: Bool) -> Theme {
         Theme(cornerRadius: cornerRadius, fontDesign: fontDesign, accentHex: accentHex, isDark: resolvedIsDark(isDark),
-              alignment: alignment ?? .auto)
+              alignment: alignment ?? .auto, fontFamily: fontFamily, textScale: textScale, fontWeight: fontWeight)
     }
 }

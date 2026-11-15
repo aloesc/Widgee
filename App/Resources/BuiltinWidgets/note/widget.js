@@ -6,6 +6,11 @@ const num = (v) => typeof v === "number" && isFinite(v);
 const clamp01 = (v) => (num(v) ? Math.max(0, Math.min(1, v)) : 0);
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const DASH = "—";
+// Auto-режим (ctx.theme.textScale == null): текст рисуется fit-кеглем в коробке w x h (pt).
+let AUTO = false;
+const T = (o, w, h) => (AUTO && w > 0 && h > 0 ? { ...o, fit: true, width: Math.floor(w), height: Math.floor(h) } : o);
+// Высоты коробок: total делится на элементы с весами wt, между ними spacing sp.
+const hts = (total, sp, ...wt) => { const av = Math.max(8, total - sp * (wt.length - 1)), s = wt.reduce((a, b) => a + b, 0); return wt.map((x) => av * x / s); };
 
 // Выравнивание содержимого (ctx.theme.alignment): auto | left | center | right.
 function alignInfo(ctx) {
@@ -45,6 +50,7 @@ function fitText(text, aw, ah, maxS, minS) {
 export default defineWidget({
   render(ctx) {
     const st = ctx.settings || {};
+    AUTO = !!ctx.theme && ctx.theme.textScale == null;
     const al = alignInfo(ctx);
     const w = ctx.size.width, h = ctx.size.height;
     const aw = w - PAD * 2, ah = h - PAD * 2;
@@ -65,9 +71,12 @@ export default defineWidget({
     const fit = fitText(text, aw, areaH, manual || Math.max(12, maxS), manual || 10);
     const size = manual || fit.size;
     const lines = clamp(Math.floor(areaH / (size * 1.25)), 1, 50);
+    // Короткий текст в Auto: одна строка максимального кегля в коробке aw x areaH (длинный/quote — эвристика fitSize).
+    const oneLine = AUTO && !quote && manual === 0 && text.indexOf("\n") < 0 && Math.min(areaH, aw / (text.length * 0.55)) >= size * 0.8;
     return page(w, h, side, 6,
       mark ? Text({ text: "“", size: mark, weight: "bold", color: "accent", align: side, height: markH, lineLimit: 1 }) : null,
-      Text({ text, size, weight: quote ? "semibold" : "regular", color, align: side, lineLimit: lines }),
+      oneLine ? Text(T({ text, size, weight: "regular", color, align: side, lineLimit: 1 }, aw, areaH))
+        : Text({ text, size, weight: quote ? "semibold" : "regular", color, align: side, lineLimit: lines }),
       auth ? Text({ text: auth, size: fitSize(auth, authS, aw), color: "secondary", align: side, lineLimit: 1 }) : null);
   },
 });

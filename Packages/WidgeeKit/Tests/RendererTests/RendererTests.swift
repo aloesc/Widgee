@@ -141,3 +141,112 @@ private func decode(_ s: String) throws -> UINode {
         #expect(size > 0)
     }
 }
+
+@Suite("Fonts") struct FontTests {
+    @Test func themeWithoutFontFamilyRoundTrips() throws {
+        let old = ##"{"cornerRadius":22,"fontDesign":"serif","accentHex":"#0A84FF","isDark":false}"##
+        let t = try JSONDecoder().decode(Theme.self, from: Data(old.utf8))
+        #expect(t.fontFamily == nil && t.fontDesign == .serif)
+        let enc = String(decoding: try JSONEncoder().encode(t), as: UTF8.self)
+        #expect(!enc.contains("fontFamily"))
+        var t2 = t; t2.fontFamily = "Menlo"
+        #expect(try JSONDecoder().decode(Theme.self, from: JSONEncoder().encode(t2)).fontFamily == "Menlo")
+    }
+
+    @Test func knownAndUnknownFamilies() {
+        #expect(FontResolver.postScriptName(family: "Menlo", weight: .bold)?.contains("Menlo") == true)
+        #expect(FontResolver.postScriptName(family: "Helvetica Neue", weight: .regular) != nil)
+        #expect(FontResolver.postScriptName(family: "No Such Font Xyz", weight: .regular) == nil)
+        for fam in ["Menlo", "No Such Font Xyz", nil] {
+            for d in FontDesign.allCases {
+                let ctx = RenderContext(theme: Theme(fontDesign: d, fontFamily: fam), sizeClass: .medium)
+                _ = ctx.font(size: 14, weight: .semibold)
+            }
+        }
+    }
+
+    // MARK: text fit / textScale
+
+    /// Ширина «чернил» (непрозрачных пикселей) отрендеренного дерева в окне 500x100.
+    @MainActor private func inkWidth(_ json: String, textScale: Double? = nil, fontWeight: String? = nil, family: String? = nil) throws -> Int {
+        try ink(json, textScale: textScale, fontWeight: fontWeight, family: family).width
+    }
+
+    @MainActor private func ink(_ json: String, textScale: Double? = nil, fontWeight: String? = nil, family: String? = nil) throws -> (width: Int, area: Int) {
+        let node = try decode(json)
+        let view = WidgetTreeView(node: node, theme: Theme(fontFamily: family, textScale: textScale, fontWeight: fontWeight))
+            .frame(width: 500, height: 100, alignment: .leading)
+            .environment(\.colorScheme, .light)
+        let r = ImageRenderer(content: view)
+        r.scale = 1
+        guard let cg = r.cgImage else { return (0, 0) }
+        let w = cg.width, h = cg.height
+        var buf = [UInt8](repeating: 0, count: w * h * 4)
+        let ctx = CGContext(data: &buf, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: w, height: h))
+        var minX = w, maxX = -1, area = 0
+        for y in 0..<h { for x in 0..<w { let a = Int(buf[(y * w + x) * 4 + 3]); if a > 40 { minX = min(minX, x); maxX = max(maxX, x) }; area += a } }
+        return (maxX < 0 ? 0 : maxX - minX + 1, area)
+    }
+
+    private func fitText(_ w: Int, _ h: Int, text: String = "12:34") -> String {
+        ##"{"type":"Text","props":{"text":"\##(text)","fit":true,"width":\##(w),"height":\##(h),"color":"#000000","align":"leading"}}"##
+    }
+
+    @MainActor @Test func textFitRendersWithoutCrash() throws {
+        for j in [
+            #"{"type":"Text","props":{"text":"x","fit":true}}"#,
+            #"{"type":"Text","props":{"text":"x","fit":true,"width":100}}"#,
+            fitText(2, 40), fitText(100, 30, text: ""), fitText(0, 0),
+            #"{"type":"DigitalClock","props":{"fit":true,"width":200,"height":60,"align":"trailing"}}"#,
+            #"{"type":"DigitalClock","props":{"fit":true}}"#,
+        ] { _ = try inkWidth(j) }
+    }
+
+    @MainActor @Test func textFitGrowsWithBox() throws {
+        let a = try inkWidth(fitText(200, 60))
+        let b = try inkWidth(fitText(400, 60))
+        #expect(a > 0)
+        #expect(b >= a)
+        #expect(a <= 200 && b <= 400)
+    }
+
+    @MainActor @Test func textScaleEnlargesAndDisablesFit() throws {
+        let plain = ##"{"type":"Text","props":{"text":"Hello","size":20,"color":"#000000"}}"##
+        let s1 = try inkWidth(plain, textScale: 1)
+        let s2 = try inkWidth(plain, textScale: 2)
+        #expect(s2 > s1 && s1 > 0)
+        // fit игнорируется при ручном масштабе: эквивалентно обычному тексту (size по умолчанию 14).
+        let f = try inkWidth(fitText(400, 60), textScale: 1)
+        let tiny = try inkWidth(fitText(400, 60))
+        #expect(f < tiny)
+    }
+
+    @MainActor @Test func fontWeightOverridesTextWeight() throws {
+        let t = ##"{"type":"Text","props":{"text":"Hamburgefons","size":30,"weight":"bold","color":"#000000"}}"##
+        let auto = try ink(t).area
+        let thin = try ink(t, fontWeight: "thin").area
+        let black = try ink(t, fontWeight: "black").area
+        #expect(thin < auto && auto < black)
+        #expect(try ink(t, fontWeight: "bogus").area == auto)
+    }
+
+    @MainActor @Test func fontWeightOverridesDigitalClock() throws {
+        for mono in ["false", "true"] {
+            let j = ##"{"type":"DigitalClock","props":{"timeZone":"UTC","size":30,"monospaced":\##(mono),"color":"#000000"}}"##
+            let thin = try ink(j, fontWeight: "thin").area
+            let black = try ink(j, fontWeight: "black").area
+            #expect(thin < black, "monospaced=\(mono)")
+        }
+    }
+
+    @MainActor @Test func fontWeightSafeOnSparseFamilies() throws {
+        let t = ##"{"type":"Text","props":{"text":"Hello","size":24,"color":"#000000"}}"##
+        for fam in ["Menlo", "Marker Felt", "Georgia", "NoSuchFont"] {
+            for w in ["ultraLight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"] {
+                #expect(try ink(t, fontWeight: w, family: fam).width > 0, "\(fam) \(w)")
+            }
+        }
+    }
+}
