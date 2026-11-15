@@ -75,7 +75,8 @@ private func waitFor(_ timeout: Double = 5, _ cond: @MainActor () -> Bool) async
         await begin(w)
         #expect(await waitFor { c.renders >= 2 }, "renders=\(c.renders) state=\(w.state)")
         #expect(w.state == .running)
-        #expect(w.tree?.props["value"]?.stringValue?.contains("\"tick\"") == true)
+        // «R» логируется внутри render, а дерево публикуется позже: ждём его, а не читаем сразу после счётчика.
+        #expect(await waitFor { text(w).contains("\"tick\"") })
         w.stop()
     }
 
